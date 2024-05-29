@@ -14,6 +14,7 @@ export async function sendWebhook<T>(
   aggregator: string,
   event: string,
   data: T,
+  metadata?: Record<string, unknown>,
 ) {
   const url = [
     process.env.FLOWCORE_WEBHOOK_BASEURL,
@@ -24,11 +25,16 @@ export async function sendWebhook<T>(
     event,
   ].join("/");
   try {
+    const headers = {};
+    if (metadata) {
+      headers["x-flowcore-metadata-json"] = JSON.stringify(metadata);
+    }
+
     const result = await axios.post<{
       success: boolean;
       eventId?: string;
       error?: string;
-    }>(url, data, { params: { key: process.env.FLOWCORE_KEY } });
+    }>(url, data, { params: { key: process.env.FLOWCORE_KEY }, headers });
 
     if (!result.data.success || !result.data.eventId) {
       console.error("Failed to send webhook", result.data.error);
