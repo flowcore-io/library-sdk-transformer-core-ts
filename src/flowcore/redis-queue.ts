@@ -43,7 +43,7 @@ export const redisPredicate = async <T>(
     return waitForPredicate(
       async () => {
         const loaded = await Promise.all(
-          eventId.map((id) => redis.get(`${REDIS_EVENT_ID_KEY}:${id}`)),
+          eventId.map((id) => redis?.get(`${REDIS_EVENT_ID_KEY}:${id}`)),
         );
 
         return _.every(loaded, (result) => !!result) as unknown as T;
@@ -56,7 +56,7 @@ export const redisPredicate = async <T>(
 
   return waitForPredicate(
     async () => {
-      const loaded = await redis.get(`${REDIS_EVENT_ID_KEY}:${eventId}`);
+      const loaded = await redis?.get(`${REDIS_EVENT_ID_KEY}:${eventId}`);
 
       return loaded as unknown as T;
     },
