@@ -3,6 +3,19 @@
 ## [1.1.0](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v1.0.1...v1.1.0) (2024-05-29)
 
 
+### Features
+
+* Add optional metadata parameter to sendWebhook function ([90be705](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/90be7058273e8dc2e3cb7d36d062b96bc572dc57))
+* Encode metadata as base64 in sendWebhook function ([2deec11](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/2deec11f01c901a09b39db45a045bc948e3b2100))
+
+
+### Bug Fixes
+
+* bumped build ([633edae](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/633edae79ad14678de81addbec9538d48ac4de64))
+
+## [1.1.0](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v1.0.1...v1.1.0) (2024-05-29)
+
+
 
 ### Features
 
