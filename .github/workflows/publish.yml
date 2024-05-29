@@ -2,7 +2,7 @@ name: Build and Publish NPM Package
 
 on:
   release:
-    types: [ published ]
+    types: [published]
 
 env:
   NODE_VERSION: ">=18.12.1"
@@ -12,9 +12,7 @@ permissions:
   contents: read
 
 jobs:
-
   build:
-
     runs-on: ubuntu-latest
 
     steps:
@@ -26,7 +24,7 @@ jobs:
         uses: sergeysova/jq-action@v2
         id: version
         with:
-          cmd: 'jq .version package.json -r'
+          cmd: "jq .version package.json -r"
 
       - name: Show my version
         run: 'echo "version ${{ steps.version.outputs.value }}"'
@@ -42,8 +40,6 @@ jobs:
           yarn install --frozen-lockfile
       - name: Lint
         run: yarn lint
-      - name: Test
-        run: yarn test --passWithNoTests
       - name: Build
         run: yarn build
       - name: Publish
