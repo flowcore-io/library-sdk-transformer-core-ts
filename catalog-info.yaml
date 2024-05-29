@@ -1,0 +1,20 @@
+#nonk8s
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: sdk-transformer-core
+  description: A core library that facilitates writing transformers and business logic services that utilise the flowcore paradigm
+  annotations:
+    github.com/project-slug: flowcore-io/library-sdk-transformer-core-ts
+  links:
+    - url: https://www.npmjs.com/package/@flowcore/sdk-transformer-core
+      title: Library NPM Link
+spec:
+  type: library
+  owner: backend
+  system: system:public-tools
+  lifecycle: experimental
+
+  dependsOn:
+    - component:flowcore-microservice
+    - component:testing-flowcore-microservice

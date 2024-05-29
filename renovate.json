@@ -1,0 +1,11 @@
+{
+  "extends": [
+    "github>flowcore-io/default-renovate-config"
+  ],
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    }
+  ]
+}
