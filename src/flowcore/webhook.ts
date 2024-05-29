@@ -27,7 +27,10 @@ export async function sendWebhook<T>(
   try {
     const headers = {};
     if (metadata) {
-      headers["x-flowcore-metadata-json"] = JSON.stringify(metadata);
+      headers["x-flowcore-metadata-json"] = Buffer.from(
+        JSON.stringify(metadata),
+        "utf-8",
+      ).toString("base64");
     }
 
     const result = await axios.post<{
