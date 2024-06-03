@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.0](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v1.2.0...v1.3.0) (2024-06-03)
+
+
+### Features
+
+* Add optional metadata parameter to sendWebhook function ([f35adb9](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/f35adb9b537d9d568f2f0e7d25d381e18ccc2f62))
+* Update sendWebhook function to include optional metadata parameter ([f888f00](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/f888f00cbe143e5d21cd7fb237dc1d9e65dad203))
+
 ## [1.2.0](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v1.1.0...v1.2.0) (2024-06-03)
 
 
