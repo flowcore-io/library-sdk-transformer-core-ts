@@ -7,6 +7,7 @@ import { waitForPredicate } from "./wait-for-predicate";
  * @param aggregator - The aggregator to send the webhook to.
  * @param event - The event to trigger on the aggregator.
  * @param data - The data to send with the webhook.
+ * @param metadata - The metadata to send with the webhook.
  * @returns A promise that resolves when the webhook is sent successfully with the event id.
  * @throws An error if the webhook fails to send.
  */
@@ -64,12 +65,14 @@ export async function sendWebhook<T>(
  * @param options.delay - The delay in milliseconds between each retry. Default is 250ms.
  * @param options.waitForPredicate - Whether to wait for the predicate to be satisfied. Default is true.
  * @param options.predicateCheck - The function that returns a promise to be evaluated.
+ * @param options.predicate - The function that evaluates the predicate.
+ * @param options.metadata - The metadata to send with the webhook.
  * @returns A function that sends a webhook with the specified aggregator, event, and data.
  * @template TData - The type of data to be sent in the webhook.
  * @template TPredicate - The type of the predicate to be checked.
  */
 export function webhookFactory<TData>(aggregator: string, event: string) {
-  return async <TPredicate = unknown>(
+  return async <TPredicate = unknown, TMetadata extends Record<string, unknown> = Record<string, unknown>>(
     data: TData,
     options?: {
       times: number;
@@ -77,6 +80,7 @@ export function webhookFactory<TData>(aggregator: string, event: string) {
       waitForPredicate?: boolean;
       predicateCheck?: () => Promise<TPredicate>;
       predicate?: (result: TPredicate) => boolean;
+      metadata?: TMetadata;
     },
   ) => {
     options = {
@@ -86,7 +90,7 @@ export function webhookFactory<TData>(aggregator: string, event: string) {
       ...(options && { options }),
     };
 
-    const eventId = await sendWebhook<TData>(aggregator, event, data);
+    const eventId = await sendWebhook<TData>(aggregator, event, data, options?.metadata);
 
     if (!options.waitForPredicate) {
       return eventId;
