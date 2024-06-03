@@ -69,6 +69,7 @@ export async function sendWebhook<T>(
  * @param options.metadata - The metadata to send with the webhook.
  * @returns A function that sends a webhook with the specified aggregator, event, and data.
  * @template TData - The type of data to be sent in the webhook.
+ * @template TMetadata - The type of metadata to be sent in the webhook.
  * @template TPredicate - The type of the predicate to be checked.
  */
 export function webhookFactory<
