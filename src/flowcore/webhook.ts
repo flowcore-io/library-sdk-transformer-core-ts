@@ -79,8 +79,8 @@ export function webhookFactory<
   return async <TPredicate = unknown>(
     data: TData,
     options?: {
-      times: number;
-      delay: number;
+      times?: number;
+      delay?: number;
       waitForPredicate?: boolean;
       predicateCheck?: () => Promise<TPredicate>;
       predicate?: (result: TPredicate) => boolean;

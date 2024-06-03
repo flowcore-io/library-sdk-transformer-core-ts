@@ -85,8 +85,8 @@ export function filehookFactory(aggregator: string, event: string) {
   return async <TPredicate = unknown>(
     data: FilehookData,
     options?: {
-      times: number;
-      delay: number;
+      times?: number;
+      delay?: number;
       waitForPredicate?: boolean;
       predicateCheck?: () => Promise<TPredicate>;
       predicate?: (result: TPredicate) => boolean;
