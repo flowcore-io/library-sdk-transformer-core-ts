@@ -71,8 +71,11 @@ export async function sendWebhook<T>(
  * @template TData - The type of data to be sent in the webhook.
  * @template TPredicate - The type of the predicate to be checked.
  */
-export function webhookFactory<TData>(aggregator: string, event: string) {
-  return async <TPredicate = unknown, TMetadata extends Record<string, unknown> = Record<string, unknown>>(
+export function webhookFactory<
+  TData,
+  TMetadata extends Record<string, unknown> = Record<string, unknown>,
+>(aggregator: string, event: string) {
+  return async <TPredicate = unknown>(
     data: TData,
     options?: {
       times: number;
@@ -90,7 +93,12 @@ export function webhookFactory<TData>(aggregator: string, event: string) {
       ...(options && { options }),
     };
 
-    const eventId = await sendWebhook<TData>(aggregator, event, data, options?.metadata);
+    const eventId = await sendWebhook<TData>(
+      aggregator,
+      event,
+      data,
+      options?.metadata,
+    );
 
     if (!options.waitForPredicate) {
       return eventId;
