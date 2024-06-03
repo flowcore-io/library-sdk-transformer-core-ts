@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.1](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v1.3.0...v1.3.1) (2024-06-03)
+
+
+### Bug Fixes
+
+* Update filehook and webhook options to make times and delay parameters optional ([a965367](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/a965367b7f584bf625cb35552984e92a754edd5f))
+
 ## [1.3.0](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v1.2.0...v1.3.0) (2024-06-03)
 
 
