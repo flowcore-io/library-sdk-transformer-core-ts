@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.2](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v1.3.1...v1.3.2) (2024-06-04)
+
+
+### Bug Fixes
+
+* Update webhook options to include metadata parameter ([c115cb5](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/c115cb50365a20c2f86194ac9e849597db40c2ed))
+
 ## [1.3.1](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v1.3.0...v1.3.1) (2024-06-03)
 
 
