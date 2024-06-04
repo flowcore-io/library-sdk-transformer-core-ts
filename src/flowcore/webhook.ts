@@ -27,6 +27,7 @@ export async function sendWebhook<T>(
   ].join("/");
   try {
     const headers = {};
+
     if (metadata) {
       headers["x-flowcore-metadata-json"] = Buffer.from(
         JSON.stringify(metadata),
@@ -91,7 +92,7 @@ export function webhookFactory<
       times: 20,
       delay: 250,
       waitForPredicate: true,
-      ...(options && { options }),
+      ...options,
     };
 
     const eventId = await sendWebhook<TData>(
