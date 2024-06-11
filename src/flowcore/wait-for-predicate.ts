@@ -1,5 +1,7 @@
 import { retry } from "radash";
 
+import FlowcorePredicateException from "../exceptions/predicate-exception";
+
 /**
  * Waits for a predicate to be satisfied by repeatedly calling an entry function.
  *
@@ -21,5 +23,7 @@ export async function waitForPredicate<T>(
       return;
     }
     throw new Error("Retry");
+  }).catch((error) => {
+    throw new FlowcorePredicateException(error.message);
   });
 }
