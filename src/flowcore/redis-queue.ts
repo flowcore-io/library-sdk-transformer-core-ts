@@ -1,5 +1,8 @@
 import Redis from "ioredis";
 import _ from "lodash";
+
+import FlowcorePredicateException from "../exceptions/predicate-exception";
+
 import { waitForPredicate } from "./wait-for-predicate";
 
 let redis: Redis | null = null;
@@ -36,7 +39,9 @@ export const redisPredicate = async <T>(
       predicate ?? ((result) => !!result),
       times,
       delay,
-    );
+    ).catch((error) => {
+      throw new FlowcorePredicateException(error.message);
+    });
   }
 
   if (eventId instanceof Array) {
@@ -51,7 +56,9 @@ export const redisPredicate = async <T>(
       predicate ?? ((result) => !!result),
       times,
       delay,
-    );
+    ).catch((error) => {
+      throw new FlowcorePredicateException(error.message);
+    });
   }
 
   return waitForPredicate(
@@ -63,7 +70,9 @@ export const redisPredicate = async <T>(
     predicate ?? ((result) => !!result),
     times,
     delay,
-  );
+  ).catch((error) => {
+    throw new FlowcorePredicateException(error.message);
+  });
 };
 
 export const writeToQueue = async (eventId: string) => {

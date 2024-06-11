@@ -1,4 +1,7 @@
-import axios from "axios";
+import axios, { isAxiosError } from "axios";
+
+import FlowcoreWebhookSendException from "../exceptions/webhook-send-exception";
+
 import { redisPredicate } from "./redis-queue";
 import { waitForPredicate } from "./wait-for-predicate";
 
@@ -43,16 +46,14 @@ export async function sendWebhook<T>(
 
     if (!result.data.success || !result.data.eventId) {
       console.error("Failed to send webhook", result.data.error);
-      throw new Error("Failed to send webhook");
+      throw new FlowcoreWebhookSendException("Failed to send webhook");
     }
 
     return result.data.eventId;
   } catch (error) {
-    console.error(
-      "Failed to send webhook",
-      error instanceof Error ? error.message : error,
-    );
-    throw new Error("Failed to send webhook");
+    const message = getMessageFromWebhookError(error);
+    console.error("Failed to send webhook", message);
+    throw new FlowcoreWebhookSendException(message);
   }
 }
 
@@ -131,4 +132,20 @@ export function webhookFactory<
 
     return eventId;
   };
+}
+
+function getMessageFromWebhookError(error: any): string {
+  if (isAxiosError(error)) {
+    const data = error.response?.data;
+    if (
+      data !== null &&
+      typeof data === "object" &&
+      typeof data.message === "string"
+    ) {
+      return data.message;
+    }
+  } else if (error instanceof Error) {
+    return error.message;
+  }
+  return "Unknown error";
 }
