@@ -67,6 +67,7 @@ export async function sendWebhook<T>(
  * @param options.waitForPredicate - Whether to wait for the predicate to be satisfied. Default is true.
  * @param options.predicateCheck - The function that returns a promise to be evaluated.
  * @param options.predicate - The function that evaluates the predicate.
+ * @param options.onPredicateFail - The function that is called if the predicate fails.
  * @param options.metadata - The metadata to send with the webhook.
  * @returns A function that sends a webhook with the specified aggregator, event, and data.
  * @template TData - The type of data to be sent in the webhook.
@@ -85,6 +86,7 @@ export function webhookFactory<
       waitForPredicate?: boolean;
       predicateCheck?: () => Promise<TPredicate>;
       predicate?: (result: TPredicate) => boolean;
+      onPredicateFail?: (event: TData) => Promise<void>;
       metadata?: TMetadata;
     },
   ) => {
@@ -105,30 +107,36 @@ export function webhookFactory<
     if (!options.waitForPredicate) {
       return eventId;
     }
+    try {
+      if (!options.predicateCheck) {
+        await redisPredicate(
+          eventId,
+          undefined,
+          undefined,
+          options.times,
+          options.delay,
+        );
 
-    if (!options.predicateCheck) {
-      await redisPredicate(
-        eventId,
-        undefined,
-        undefined,
+        return eventId;
+      }
+
+      if (!options.predicate) {
+        options.predicate = (result) => !!result;
+      }
+
+      await waitForPredicate(
+        options.predicateCheck,
+        options.predicate,
         options.times,
         options.delay,
       );
 
       return eventId;
+    } catch (error) {
+      if (options.onPredicateFail) {
+        await options.onPredicateFail(data);
+      }
+      throw error;
     }
-
-    if (!options.predicate) {
-      options.predicate = (result) => !!result;
-    }
-
-    await waitForPredicate(
-      options.predicateCheck,
-      options.predicate,
-      options.times,
-      options.delay,
-    );
-
-    return eventId;
   };
 }
