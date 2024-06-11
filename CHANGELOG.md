@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v1.3.2...v1.4.0) (2024-06-11)
+
+
+### Features
+
+* add specific exceptions ([658cfd6](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/658cfd6be3b42cad1237ec3d340125e3f8157e79))
+
 ## [1.3.2](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v1.3.1...v1.3.2) (2024-06-04)
 
 
