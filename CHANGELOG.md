@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.0](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v1.5.0...v1.6.0) (2024-06-12)
+
+
+### Features
+
+* refactor to not depend on env vars ([41afbc0](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/41afbc0f7939e48976c936db56ad1e6dfd449f9c))
+
 ## [1.5.0](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v1.4.0...v1.5.0) (2024-06-12)
 
 
