@@ -1,6 +1,5 @@
 import axios from "axios";
-import * as process from "process";
-import { redisPredicate } from "./redis-queue";
+import { RedisPredicate, redisPredicateFactory } from "./redis-queue";
 import { waitForPredicate } from "./wait-for-predicate";
 
 export type FilehookData = {
@@ -11,6 +10,15 @@ export type FilehookData = {
   metadata?: Record<string, string>;
 };
 
+export interface FilehookOptions {
+  webhookBaseUrl: string;
+  tenant: string;
+  dataCore: string;
+  apiKey: string;
+  redisUrl?: string;
+  redisEventIdKey?: string;
+}
+
 /**
  * Sends a file to the Flowcore filehook to the specified aggregator and event.
  * @param aggregator - The aggregator to send the webhook to.
@@ -20,15 +28,16 @@ export type FilehookData = {
  * @throws An error if the webhook fails to send.
  */
 export async function sendFilehook(
+  filehookOptions: FilehookOptions,
   aggregator: string,
   event: string,
   data: FilehookData,
 ) {
   const url = [
-    process.env.FLOWCORE_WEBHOOK_BASEURL,
+    filehookOptions.webhookBaseUrl,
     "file",
-    process.env.FLOWCORE_TENANT,
-    process.env.FLOWCORE_DATACORE,
+    filehookOptions.tenant,
+    filehookOptions.dataCore,
     aggregator,
     event,
   ].join("/");
@@ -49,7 +58,7 @@ export async function sendFilehook(
       checksum: string;
       eventIds?: string[];
     }>(url, formData, {
-      headers: { Authorization: `${process.env.FLOWCORE_KEY}` },
+      headers: { Authorization: `${filehookOptions.apiKey}` },
     });
 
     if (!result.data.checksum) {
@@ -68,66 +77,75 @@ export async function sendFilehook(
 }
 
 /**
- * Creates a filehook factory function.
+ * Returns a function that creates a filehook with specified options and sends it based on aggregator and event.
  *
- * @param aggregator - The aggregator for the filehook.
- * @param event - The event for the filehook.
- * @param options - The options for the filehook factory.
- * @param options.times - The maximum number of times to retry the predicate check. Default is 20.
- * @param options.delay - The delay in milliseconds between each retry. Default is 250ms.
- * @param options.waitForPredicate - Whether to wait for the predicate to be satisfied. Default is true.
- * @param options.predicateCheck - The function that returns a promise to be evaluated.
- * @param options.predicate - The function that determines if the result satisfies the condition.
- * @returns A function that sends a filehook with the specified aggregator, event ids for each part of the file
- * @template TPredicate - The type of predicate to be checked.
+ * @param {FilehookOptions} filehookOptions - The options for creating the filehook including the Redis URL and event ID key.
+ * @return {(aggregator: string, event: string) =>
+ *  (data: FilehookData, options?: {
+ *    times?: number;
+ *    delay?: number;
+ *    waitForPredicate?: boolean;
+ *    predicateCheck?: () => Promise<unknown>;
+ *    predicate?: (result: unknown) => boolean;
+ * }) => Promise<string>} - The filehook factory function that creates and sends a filehook with optional predicate checking.
  */
-export function filehookFactory(aggregator: string, event: string) {
-  return async <TPredicate = unknown>(
-    data: FilehookData,
-    options?: {
-      times?: number;
-      delay?: number;
-      waitForPredicate?: boolean;
-      predicateCheck?: () => Promise<TPredicate>;
-      predicate?: (result: TPredicate) => boolean;
-    },
-  ) => {
-    options = {
-      times: 20,
-      delay: 250,
-      waitForPredicate: true,
-      ...options,
-    };
+export function filehookFactory(filehookOptions: FilehookOptions) {
+  let redisPredicate: RedisPredicate | undefined;
+  if (filehookOptions.redisUrl && filehookOptions.redisEventIdKey) {
+    redisPredicate = redisPredicateFactory({
+      redisUrl: filehookOptions.redisUrl,
+      redisEventIdKey: filehookOptions.redisEventIdKey,
+    });
+  }
+  return (aggregator: string, event: string) => {
+    return async <TPredicate = unknown>(
+      data: FilehookData,
+      options?: {
+        times?: number;
+        delay?: number;
+        waitForPredicate?: boolean;
+        predicateCheck?: () => Promise<TPredicate>;
+        predicate?: (result: TPredicate) => boolean;
+      },
+    ) => {
+      options = {
+        times: 20,
+        delay: 250,
+        waitForPredicate: true,
+        ...options,
+      };
 
-    const eventIds = await sendFilehook(aggregator, event, data);
+      const eventIds = await sendFilehook(
+        filehookOptions,
+        aggregator,
+        event,
+        data,
+      );
 
-    if (!options.waitForPredicate) {
-      return eventIds;
-    }
+      if (!options.waitForPredicate) {
+        return eventIds;
+      }
 
-    if (!options.predicateCheck) {
-      await redisPredicate(
-        eventIds,
-        undefined,
-        undefined,
+      if (!options.predicateCheck) {
+        if (!redisPredicate || !eventIds || !eventIds.length) {
+          return eventIds;
+        }
+        await redisPredicate(eventIds, options.times, options.delay);
+        return eventIds;
+      }
+
+      if (!options.predicate) {
+        options.predicate = (result) => !!result;
+      }
+
+      await waitForPredicate(
+        options.predicateCheck,
+        options.predicate,
         options.times,
         options.delay,
       );
 
       return eventIds;
-    }
-
-    if (!options.predicate) {
-      options.predicate = (result) => !!result;
-    }
-
-    await waitForPredicate(
-      options.predicateCheck,
-      options.predicate,
-      options.times,
-      options.delay,
-    );
-
-    return eventIds;
+    };
   };
 }
