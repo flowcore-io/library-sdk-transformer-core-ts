@@ -2,8 +2,22 @@ import axios, { isAxiosError } from "axios";
 
 import FlowcoreWebhookSendException from "../exceptions/webhook-send-exception";
 
-import { redisPredicate } from "./redis-queue";
+import { RedisPredicate, redisPredicateFactory } from "./redis-queue";
 import { waitForPredicate } from "./wait-for-predicate";
+import { EventDto } from "src/contracts";
+import { z } from "zod";
+
+export interface WebhookOptions {
+  webhookBaseUrl: string;
+  tenant: string;
+  dataCore: string;
+  apiKey: string;
+  redisUrl?: string;
+  redisEventIdKey?: string;
+  localTransformBaseUrl?: string;
+  localTransformSecret?: string;
+  waitForPredicates?: boolean;
+}
 
 export type WebhookSignature<
   TData,
@@ -24,6 +38,7 @@ export type WebhookSignature<
 
 /**
  * Sends a webhook to the specified aggregator and event.
+ * @param options - The options for the webhook.
  * @param aggregator - The aggregator to send the webhook to.
  * @param event - The event to trigger on the aggregator.
  * @param data - The data to send with the webhook.
@@ -32,16 +47,17 @@ export type WebhookSignature<
  * @throws An error if the webhook fails to send.
  */
 export async function sendWebhook<T>(
+  options: WebhookOptions,
   aggregator: string,
   event: string,
   data: T,
   metadata?: Record<string, unknown>,
 ) {
   const url = [
-    process.env.FLOWCORE_WEBHOOK_BASEURL,
+    options.webhookBaseUrl,
     "event",
-    process.env.FLOWCORE_TENANT,
-    process.env.FLOWCORE_DATACORE,
+    options.tenant,
+    options.dataCore,
     aggregator,
     event,
   ].join("/");
@@ -59,11 +75,37 @@ export async function sendWebhook<T>(
       success: boolean;
       eventId?: string;
       error?: string;
-    }>(url, data, { params: { key: process.env.FLOWCORE_KEY }, headers });
+    }>(url, data, { params: { key: options.apiKey }, headers });
 
     if (!result.data.success || !result.data.eventId) {
       console.error("Failed to send webhook", result.data.error);
       throw new FlowcoreWebhookSendException("Failed to send webhook");
+    }
+
+    if (options.localTransformBaseUrl && options.localTransformSecret) {
+      try {
+        const transformerUrl = [options.localTransformBaseUrl, aggregator].join(
+          "/",
+        );
+
+        const localEvent: z.infer<typeof EventDto> = {
+          eventId: result.data.eventId,
+          aggregator,
+          eventType: event,
+          validTime: new Date().toISOString(),
+          payload: data,
+        };
+
+        await axios.post(transformerUrl, localEvent, {
+          headers: {
+            "X-Secret": options.localTransformSecret,
+          },
+        });
+        console.debug(`Sent to local transformer: ${result.data.eventId}`);
+      } catch (error) {
+        console.error("Failed to send to local transformer");
+        throw error;
+      }
     }
 
     return result.data.eventId;
@@ -75,79 +117,79 @@ export async function sendWebhook<T>(
 }
 
 /**
- * Creates a webhook factory function.
+ * Returns a function that sends a webhook to the specified aggregator and event with optional metadata and predicate checking.
  *
- * @param aggregator - The aggregator for the webhook.
- * @param event - The event for the webhook.
- * @param options - The options for the webhook factory.
- * @param options.times - The maximum number of times to retry the predicate check. Default is 20.
- * @param options.delay - The delay in milliseconds between each retry. Default is 250ms.
- * @param options.waitForPredicate - Whether to wait for the predicate to be satisfied. Default is true.
- * @param options.predicateCheck - The function that returns a promise to be evaluated.
- * @param options.predicate - The function that evaluates the predicate.
- * @param options.metadata - The metadata to send with the webhook.
- * @returns A function that sends a webhook with the specified aggregator, event, and data.
- * @template TData - The type of data to be sent in the webhook.
- * @template TMetadata - The type of metadata to be sent in the webhook.
- * @template TPredicate - The type of the predicate to be checked.
+ * @param {WebhookOptions} webHookOptions - The webhook options including the webhook base URL, tenant, data core, API key, and optional local transformer base URL and Redis URL with event ID key.
+ * @return - The webhook factory function that returns a function that sends a webhook with optional predicate checking.
  */
-export function webhookFactory<
-  TData,
-  TMetadata extends Record<string, unknown> = Record<string, unknown>,
->(aggregator: string, event: string) {
-  return async <TPredicate = unknown>(
-    data: TData,
-    options?: {
-      times?: number;
-      delay?: number;
-      waitForPredicate?: boolean;
-      predicateCheck?: () => Promise<TPredicate>;
-      predicate?: (result: TPredicate) => boolean;
-      metadata?: TMetadata;
-    },
+export function webhookFactory(webHookOptions: WebhookOptions) {
+  let redisPredicate: RedisPredicate | undefined;
+  if (webHookOptions.redisUrl && webHookOptions.redisEventIdKey) {
+    redisPredicate = redisPredicateFactory({
+      redisUrl: webHookOptions.redisUrl,
+      redisEventIdKey: webHookOptions.redisEventIdKey,
+    });
+  }
+
+  return <
+    TData,
+    TMetadata extends Record<string, unknown> = Record<string, unknown>,
+  >(
+    aggregator: string,
+    event: string,
   ) => {
-    options = {
-      times: 20,
-      delay: 250,
-      waitForPredicate: true,
-      ...options,
-    };
+    return async <TPredicate = unknown>(
+      data: TData,
+      options?: {
+        times?: number;
+        delay?: number;
+        waitForPredicate?: boolean;
+        predicateCheck?: () => Promise<TPredicate>;
+        predicate?: (result: TPredicate) => boolean;
+        metadata?: TMetadata;
+      },
+    ) => {
+      options = {
+        times: 20,
+        delay: 250,
+        waitForPredicate: webHookOptions.waitForPredicates ?? true,
+        ...options,
+      };
 
-    const eventId = await sendWebhook<TData>(
-      aggregator,
-      event,
-      data,
-      options?.metadata,
-    );
+      const eventId = await sendWebhook<TData>(
+        webHookOptions,
+        aggregator,
+        event,
+        data,
+        options?.metadata,
+      );
 
-    if (!options.waitForPredicate) {
-      return eventId;
-    }
+      if (!options.waitForPredicate) {
+        return eventId;
+      }
 
-    if (!options.predicateCheck) {
-      await redisPredicate(
-        eventId,
-        undefined,
-        undefined,
+      if (!options.predicateCheck) {
+        if (!redisPredicate) {
+          return eventId;
+        }
+        await redisPredicate(eventId, options.times, options.delay);
+
+        return eventId;
+      }
+
+      if (!options.predicate) {
+        options.predicate = (result) => !!result;
+      }
+
+      await waitForPredicate(
+        options.predicateCheck,
+        options.predicate,
         options.times,
         options.delay,
       );
 
       return eventId;
-    }
-
-    if (!options.predicate) {
-      options.predicate = (result) => !!result;
-    }
-
-    await waitForPredicate(
-      options.predicateCheck,
-      options.predicate,
-      options.times,
-      options.delay,
-    );
-
-    return eventId;
+    };
   };
 }
 
