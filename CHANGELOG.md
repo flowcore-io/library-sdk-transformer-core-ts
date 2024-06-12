@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v1.4.0...v1.5.0) (2024-06-12)
+
+
+### Features
+
+* Add metadata-webhook.factory for handling metadata in webhooks ([41dfad8](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/41dfad8da58661b8a71674f8699f1fe0d6a92f8e))
+
 ## [1.4.0](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v1.3.2...v1.4.0) (2024-06-11)
 
 
