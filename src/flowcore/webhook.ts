@@ -5,6 +5,23 @@ import FlowcoreWebhookSendException from "../exceptions/webhook-send-exception";
 import { redisPredicate } from "./redis-queue";
 import { waitForPredicate } from "./wait-for-predicate";
 
+export type WebhookSignature<
+  TData,
+  TMetadata extends Record<string, unknown> = Record<string, unknown>,
+> = <TPredicate = unknown>(
+  data: TData,
+  options?:
+    | {
+        times?: number | undefined;
+        delay?: number | undefined;
+        waitForPredicate?: boolean | undefined;
+        predicateCheck?: (() => Promise<TPredicate>) | undefined;
+        predicate?: ((result: TPredicate) => boolean) | undefined;
+        metadata?: TMetadata | undefined;
+      }
+    | undefined,
+) => Promise<string>;
+
 /**
  * Sends a webhook to the specified aggregator and event.
  * @param aggregator - The aggregator to send the webhook to.
