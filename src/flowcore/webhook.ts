@@ -1,4 +1,5 @@
 import axios, { isAxiosError } from "axios";
+import { retry } from "radash";
 
 import FlowcoreWebhookSendException from "../exceptions/webhook-send-exception";
 import FlowcorePredicateException from "../exceptions/predicate-exception";
@@ -20,6 +21,8 @@ export interface WebhookOptions {
   localTransformBaseUrl?: string;
   localTransformSecret?: string;
   waitForPredicates?: boolean;
+  webhookRetryCount?: number;
+  webhookRetryDelay?: number;
 }
 
 export type WebhookSignature<
@@ -157,13 +160,16 @@ export function webhookFactory(webHookOptions: WebhookOptions) {
         ...options,
       };
 
-      const eventId = await sendWebhook<TData>(
+      const eventId = await retry({
+        times: webHookOptions.webhookRetryCount ?? 4, 
+        delay: webHookOptions.webhookRetryDelay ?? 250
+      }, () => sendWebhook<TData>(
         webHookOptions,
         aggregator,
         event,
         data,
         options?.metadata,
-      );
+      ));
 
       if (!options.waitForPredicate) {
         return eventId;

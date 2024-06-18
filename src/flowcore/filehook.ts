@@ -1,4 +1,6 @@
 import axios from "axios";
+import { retry } from "radash";
+
 import { RedisPredicate, redisPredicateFactory } from "./redis-queue";
 import { waitForPredicate } from "./wait-for-predicate";
 
@@ -17,6 +19,8 @@ export interface FilehookOptions {
   apiKey: string;
   redisUrl?: string;
   redisEventIdKey?: string;
+  webhookRetryCount?: number;
+  webhookRetryDelay?: number;
 }
 
 /**
@@ -115,12 +119,15 @@ export function filehookFactory(filehookOptions: FilehookOptions) {
         ...options,
       };
 
-      const eventIds = await sendFilehook(
+      const eventIds = await retry({
+        times: filehookOptions.webhookRetryCount ?? 4, 
+        delay: filehookOptions.webhookRetryDelay ?? 250
+      }, () => sendFilehook(
         filehookOptions,
         aggregator,
         event,
         data,
-      );
+      ));
 
       if (!options.waitForPredicate) {
         return eventIds;
