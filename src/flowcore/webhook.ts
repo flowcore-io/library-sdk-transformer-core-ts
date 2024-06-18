@@ -160,16 +160,20 @@ export function webhookFactory(webHookOptions: WebhookOptions) {
         ...options,
       };
 
-      const eventId = await retry({
-        times: webHookOptions.webhookRetryCount ?? 4, 
-        delay: webHookOptions.webhookRetryDelay ?? 250
-      }, () => sendWebhook<TData>(
+      const sendWebhookMethod = () => sendWebhook<TData>(
         webHookOptions,
         aggregator,
         event,
         data,
         options?.metadata,
-      ));
+      )
+
+      const eventId = !webHookOptions.webhookRetryCount 
+        ? await sendWebhookMethod() 
+        : await retry({
+          times: webHookOptions.webhookRetryCount, 
+          delay: webHookOptions.webhookRetryDelay ?? 250
+        }, sendWebhookMethod);
 
       if (!options.waitForPredicate) {
         return eventId;

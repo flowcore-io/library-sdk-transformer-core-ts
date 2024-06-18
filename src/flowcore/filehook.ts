@@ -119,15 +119,19 @@ export function filehookFactory(filehookOptions: FilehookOptions) {
         ...options,
       };
 
-      const eventIds = await retry({
-        times: filehookOptions.webhookRetryCount ?? 4, 
-        delay: filehookOptions.webhookRetryDelay ?? 250
-      }, () => sendFilehook(
+      const sendFileHookMethod = () => sendFilehook(
         filehookOptions,
         aggregator,
         event,
         data,
-      ));
+      )
+
+      const eventIds = !filehookOptions.webhookRetryCount 
+        ? await sendFileHookMethod() 
+        : await retry({
+          times: filehookOptions.webhookRetryCount, 
+          delay: filehookOptions.webhookRetryDelay ?? 250
+        }, sendFileHookMethod);
 
       if (!options.waitForPredicate) {
         return eventIds;
