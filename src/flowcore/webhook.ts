@@ -79,7 +79,6 @@ export async function sendWebhook<T>(
     }>(url, data, { params: { key: options.apiKey }, headers });
 
     if (!result.data.success || !result.data.eventId) {
-      console.error("Failed to send webhook", result.data.error);
       throw new FlowcoreWebhookSendException("Failed to send webhook", result.data, aggregator, event, data);
     }
 
@@ -112,7 +111,6 @@ export async function sendWebhook<T>(
     return result.data.eventId;
   } catch (error) {
     const message = getMessageFromWebhookError(error);
-    console.error(error);
     throw new FlowcoreWebhookSendException(message, error, aggregator, event, data);
   }
 }
