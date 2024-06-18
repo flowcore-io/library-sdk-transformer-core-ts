@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.1](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v1.7.0...v1.7.1) (2024-06-18)
+
+
+### Bug Fixes
+
+* fixes ([ceaf6cd](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/ceaf6cda1288f60aa40e25fa7854c0b88fa61788))
+
 ## [1.7.0](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v1.6.2...v1.7.0) (2024-06-18)
 
 
