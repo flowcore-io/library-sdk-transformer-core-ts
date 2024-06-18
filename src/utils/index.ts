@@ -1,1 +1,1 @@
-export * from "./throw-safe-error";
+export * from "./throw-safe-error"

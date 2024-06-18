@@ -1,22 +1,36 @@
-import axios from "axios";
-import { RedisPredicate, redisPredicateFactory } from "./redis-queue";
-import { waitForPredicate } from "./wait-for-predicate";
+import axios from "axios"
+import { retry } from "radash"
+
+import { RedisPredicate, redisPredicateFactory } from "./redis-queue"
+import { waitForPredicate } from "./wait-for-predicate"
 
 export type FilehookData = {
-  fileId: string;
-  fileName: string;
-  fileType: string;
-  fileContent: Blob;
-  metadata?: Record<string, string>;
-};
+  fileId: string
+  fileName: string
+  fileType: string
+  fileContent: Blob
+  metadata?: Record<string, string>
+}
 
 export interface FilehookOptions {
-  webhookBaseUrl: string;
-  tenant: string;
-  dataCore: string;
-  apiKey: string;
-  redisUrl?: string;
-  redisEventIdKey?: string;
+  webhook: {
+    baseUrl: string
+    tenant: string
+    dataCore: string
+    apiKey: string
+    /*How ofter to retry sending the webhook on fail*/
+    retryCount?: number
+    /*Delay between retries*/
+    retryDelayMs?: number | ((count: number) => number)
+  }
+  redisPredicateCheck?: {
+    url: string
+    keyPrefix: string
+    /*How ofter to retry redis predicate on fail*/
+    retryCount?: number
+    /*Delay between retries*/
+    retryDelayMs?: number | ((count: number) => number)
+  }
 }
 
 /**
@@ -34,45 +48,45 @@ export async function sendFilehook(
   data: FilehookData,
 ) {
   const url = [
-    filehookOptions.webhookBaseUrl,
+    filehookOptions.webhook.baseUrl,
     "file",
-    filehookOptions.tenant,
-    filehookOptions.dataCore,
+    filehookOptions.webhook.tenant,
+    filehookOptions.webhook.dataCore,
     aggregator,
     event,
-  ].join("/");
+  ].join("/")
   try {
-    const formData = new FormData();
+    const formData = new FormData()
 
     if (data.metadata) {
       Object.entries(data.metadata).forEach(([key, value]) => {
-        formData.append(key, value);
-      });
+        formData.append(key, value)
+      })
     }
 
-    formData.append("fileId", data.fileId);
-    formData.append("type", data.fileType);
-    formData.append("file", data.fileContent, data.fileName);
+    formData.append("fileId", data.fileId)
+    formData.append("type", data.fileType)
+    formData.append("file", data.fileContent, data.fileName)
 
     const result = await axios.post<{
-      checksum: string;
-      eventIds?: string[];
+      checksum: string
+      eventIds?: string[]
     }>(url, formData, {
-      headers: { Authorization: `${filehookOptions.apiKey}` },
-    });
+      headers: { Authorization: `${filehookOptions.webhook.apiKey}` },
+    })
 
     if (!result.data.checksum) {
-      console.error("Failed to send filehook");
-      throw new Error("Failed to send filehook");
+      console.error("Failed to send filehook")
+      throw new Error("Failed to send filehook")
     }
 
-    return result.data.eventIds;
+    return result.data.eventIds
   } catch (error) {
     console.error(
       "Failed to send filehook",
       error instanceof Error ? error.message : error,
-    );
-    throw new Error("Failed to send filehook");
+    )
+    throw new Error("Failed to send filehook")
   }
 }
 
@@ -90,52 +104,59 @@ export async function sendFilehook(
  * }) => Promise<string>} - The filehook factory function that creates and sends a filehook with optional predicate checking.
  */
 export function filehookFactory(filehookOptions: FilehookOptions) {
-  let redisPredicate: RedisPredicate | undefined;
-  if (filehookOptions.redisUrl && filehookOptions.redisEventIdKey) {
+  let redisPredicate: RedisPredicate | undefined
+  if (filehookOptions.redisPredicateCheck) {
     redisPredicate = redisPredicateFactory({
-      redisUrl: filehookOptions.redisUrl,
-      redisEventIdKey: filehookOptions.redisEventIdKey,
-    });
+      redisUrl: filehookOptions.redisPredicateCheck.url,
+      redisEventIdKey: filehookOptions.redisPredicateCheck.keyPrefix,
+    })
   }
   return (aggregator: string, event: string) => {
     return async <TPredicate = unknown>(
       data: FilehookData,
       options?: {
-        times?: number;
-        delay?: number;
-        waitForPredicate?: boolean;
-        predicateCheck?: () => Promise<TPredicate>;
-        predicate?: (result: TPredicate) => boolean;
+        skipPredicateCheck?: boolean
+        predicateCheck?: () => Promise<TPredicate>
+        predicate?: (result: TPredicate) => boolean
+        times?: number
+        delay?: number
       },
     ) => {
       options = {
         times: 20,
         delay: 250,
-        waitForPredicate: true,
         ...options,
-      };
+      }
 
-      const eventIds = await sendFilehook(
-        filehookOptions,
-        aggregator,
-        event,
-        data,
-      );
+      const sendFileHookMethod = () =>
+        sendFilehook(filehookOptions, aggregator, event, data)
 
-      if (!options.waitForPredicate) {
-        return eventIds;
+      const eventIds = !filehookOptions.webhook.retryCount
+        ? await sendFileHookMethod()
+        : await retry(
+            {
+              times: filehookOptions.webhook.retryCount,
+              ...(typeof filehookOptions.webhook.retryDelayMs === "function"
+                ? { backoff: filehookOptions.webhook.retryDelayMs }
+                : { delay: filehookOptions.webhook.retryDelayMs ?? 250 }),
+            },
+            sendFileHookMethod,
+          )
+
+      if (options.skipPredicateCheck) {
+        return eventIds
       }
 
       if (!options.predicateCheck) {
         if (!redisPredicate || !eventIds || !eventIds.length) {
-          return eventIds;
+          return eventIds
         }
-        await redisPredicate(eventIds, options.times, options.delay);
-        return eventIds;
+        await redisPredicate(eventIds, options.times, options.delay)
+        return eventIds
       }
 
       if (!options.predicate) {
-        options.predicate = (result) => !!result;
+        options.predicate = (result) => !!result
       }
 
       await waitForPredicate(
@@ -143,9 +164,9 @@ export function filehookFactory(filehookOptions: FilehookOptions) {
         options.predicate,
         options.times,
         options.delay,
-      );
+      )
 
-      return eventIds;
-    };
-  };
+      return eventIds
+    }
+  }
 }
