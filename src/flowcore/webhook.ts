@@ -12,17 +12,28 @@ import { z } from "zod";
 
 
 export interface WebhookOptions {
-  webhookBaseUrl: string;
-  tenant: string;
-  dataCore: string;
-  apiKey: string;
-  redisUrl?: string;
-  redisEventIdKey?: string;
-  localTransformBaseUrl?: string;
-  localTransformSecret?: string;
-  waitForPredicates?: boolean;
-  webhookRetryCount?: number;
-  webhookRetryDelay?: number;
+  webhook: {
+    baseUrl: string;
+    tenant: string;
+    dataCore: string;
+    apiKey: string;
+    /*How ofter to retry sending the webhook on fail*/
+    retryCount?: number;
+    /*Delay between retries*/
+    retryDelayMs?: number | ((count: number) => number);
+  },
+  localTransform: {
+    baseUrl?: string;
+    secret?: string;
+  },
+  redisPredicateCheck?: {
+    url: string;
+    keyPrefix: string;
+    /*How ofter to retry redis predicate on fail*/
+    retryCount?: number;
+    /*Delay between retries*/
+    retryDelayMs?: number | ((count: number) => number);
+  },
 }
 
 export type WebhookSignature<
@@ -60,10 +71,10 @@ export async function sendWebhook<T>(
   metadata?: Record<string, unknown>,
 ) {
   const url = [
-    options.webhookBaseUrl,
+    options.webhook.baseUrl,
     "event",
-    options.tenant,
-    options.dataCore,
+    options.webhook.tenant,
+    options.webhook.dataCore,
     aggregator,
     event,
   ].join("/");
@@ -81,15 +92,15 @@ export async function sendWebhook<T>(
       success: boolean;
       eventId?: string;
       error?: string;
-    }>(url, data, { params: { key: options.apiKey }, headers });
+    }>(url, data, { params: { key: options.webhook.apiKey }, headers });
 
     if (!result.data.success || !result.data.eventId) {
       throw new FlowcoreWebhookSendException("Failed to send webhook", result.data, aggregator, event, data);
     }
 
-    if (options.localTransformBaseUrl && options.localTransformSecret) {
+    if (options.localTransform.baseUrl && options.localTransform.secret) {
       try {
-        const transformerUrl = [options.localTransformBaseUrl, aggregator].join(
+        const transformerUrl = [options.localTransform.baseUrl, aggregator].join(
           "/",
         );
 
@@ -103,7 +114,7 @@ export async function sendWebhook<T>(
 
         await axios.post(transformerUrl, localEvent, {
           headers: {
-            "X-Secret": options.localTransformSecret,
+            "X-Secret": options.localTransform.secret,
           },
         });
         console.debug(`Sent to local transformer: ${result.data.eventId}`);
@@ -128,10 +139,10 @@ export async function sendWebhook<T>(
  */
 export function webhookFactory(webHookOptions: WebhookOptions) {
   let redisPredicate: RedisPredicate | undefined;
-  if (webHookOptions.redisUrl && webHookOptions.redisEventIdKey) {
+  if (webHookOptions.redisPredicateCheck) {
     redisPredicate = redisPredicateFactory({
-      redisUrl: webHookOptions.redisUrl,
-      redisEventIdKey: webHookOptions.redisEventIdKey,
+      redisUrl: webHookOptions.redisPredicateCheck.url,
+      redisEventIdKey: webHookOptions.redisPredicateCheck.keyPrefix,
     });
   }
 
@@ -145,18 +156,20 @@ export function webhookFactory(webHookOptions: WebhookOptions) {
     return async <TPredicate = unknown>(
       data: TData,
       options?: {
-        times?: number;
-        delay?: number;
-        waitForPredicate?: boolean;
+        /*Skip all predicate checks (redis or custom)*/
+        skipPredicate?: boolean;
+        /*Custom predicate check (skips redis check when defined)*/
         predicateCheck?: () => Promise<TPredicate>;
+        /*Custom predicate (Only applicable for custom predicate check)*/
         predicate?: (result: TPredicate) => boolean;
+        retryCount?: number;
+        retryDelayMs?: number;
         metadata?: TMetadata;
       },
     ) => {
       options = {
-        times: 20,
-        delay: 250,
-        waitForPredicate: webHookOptions.waitForPredicates ?? true,
+        retryCount: 20,
+        retryDelayMs: 250,
         ...options,
       };
 
@@ -168,14 +181,18 @@ export function webhookFactory(webHookOptions: WebhookOptions) {
         options?.metadata,
       )
 
-      const eventId = !webHookOptions.webhookRetryCount 
+      const eventId = !webHookOptions.webhook.retryCount 
         ? await sendWebhookMethod() 
         : await retry({
-          times: webHookOptions.webhookRetryCount, 
-          delay: webHookOptions.webhookRetryDelay ?? 250
+          times: webHookOptions.webhook.retryCount,
+          ...(
+            typeof webHookOptions.webhook.retryDelayMs === "function" 
+              ? {backoff: webHookOptions.webhook.retryDelayMs} 
+              : {delay: webHookOptions.webhook.retryDelayMs ?? 250}
+            ),
         }, sendWebhookMethod);
 
-      if (!options.waitForPredicate) {
+      if (options?.skipPredicate) {
         return eventId;
       }
 
@@ -184,8 +201,7 @@ export function webhookFactory(webHookOptions: WebhookOptions) {
           if (!redisPredicate) {
             return eventId;
           }
-          await redisPredicate(eventId, options.times, options.delay);
-  
+          await redisPredicate(eventId, options.retryCount, options.retryDelayMs);
           return eventId;
         }
   
@@ -196,8 +212,8 @@ export function webhookFactory(webHookOptions: WebhookOptions) {
         await waitForPredicate(
           options.predicateCheck,
           options.predicate,
-          options.times,
-          options.delay,
+          options.retryCount,
+          options.retryDelayMs,
         );
   
         return eventId;

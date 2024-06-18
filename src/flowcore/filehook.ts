@@ -13,14 +13,24 @@ export type FilehookData = {
 };
 
 export interface FilehookOptions {
-  webhookBaseUrl: string;
-  tenant: string;
-  dataCore: string;
-  apiKey: string;
-  redisUrl?: string;
-  redisEventIdKey?: string;
-  webhookRetryCount?: number;
-  webhookRetryDelay?: number;
+  webhook: {
+    baseUrl: string;
+    tenant: string;
+    dataCore: string;
+    apiKey: string;
+    /*How ofter to retry sending the webhook on fail*/
+    retryCount?: number;
+    /*Delay between retries*/
+    retryDelayMs?: number | ((count: number) => number);
+  },
+  redisPredicateCheck?: {
+    url: string;
+    keyPrefix: string;
+    /*How ofter to retry redis predicate on fail*/
+    retryCount?: number;
+    /*Delay between retries*/
+    retryDelayMs?: number | ((count: number) => number);
+  },
 }
 
 /**
@@ -38,10 +48,10 @@ export async function sendFilehook(
   data: FilehookData,
 ) {
   const url = [
-    filehookOptions.webhookBaseUrl,
+    filehookOptions.webhook.baseUrl,
     "file",
-    filehookOptions.tenant,
-    filehookOptions.dataCore,
+    filehookOptions.webhook.tenant,
+    filehookOptions.webhook.dataCore,
     aggregator,
     event,
   ].join("/");
@@ -62,7 +72,7 @@ export async function sendFilehook(
       checksum: string;
       eventIds?: string[];
     }>(url, formData, {
-      headers: { Authorization: `${filehookOptions.apiKey}` },
+      headers: { Authorization: `${filehookOptions.webhook.apiKey}` },
     });
 
     if (!result.data.checksum) {
@@ -95,27 +105,26 @@ export async function sendFilehook(
  */
 export function filehookFactory(filehookOptions: FilehookOptions) {
   let redisPredicate: RedisPredicate | undefined;
-  if (filehookOptions.redisUrl && filehookOptions.redisEventIdKey) {
+  if (filehookOptions.redisPredicateCheck) {
     redisPredicate = redisPredicateFactory({
-      redisUrl: filehookOptions.redisUrl,
-      redisEventIdKey: filehookOptions.redisEventIdKey,
+      redisUrl: filehookOptions.redisPredicateCheck.url,
+      redisEventIdKey: filehookOptions.redisPredicateCheck.keyPrefix,
     });
   }
   return (aggregator: string, event: string) => {
     return async <TPredicate = unknown>(
       data: FilehookData,
       options?: {
-        times?: number;
-        delay?: number;
-        waitForPredicate?: boolean;
+        skipPredicateCheck?: boolean;
         predicateCheck?: () => Promise<TPredicate>;
         predicate?: (result: TPredicate) => boolean;
+        times?: number;
+        delay?: number;
       },
     ) => {
       options = {
         times: 20,
         delay: 250,
-        waitForPredicate: true,
         ...options,
       };
 
@@ -126,14 +135,18 @@ export function filehookFactory(filehookOptions: FilehookOptions) {
         data,
       )
 
-      const eventIds = !filehookOptions.webhookRetryCount 
+      const eventIds = !filehookOptions.webhook.retryCount 
         ? await sendFileHookMethod() 
         : await retry({
-          times: filehookOptions.webhookRetryCount, 
-          delay: filehookOptions.webhookRetryDelay ?? 250
+          times: filehookOptions.webhook.retryCount, 
+          ...(
+            typeof filehookOptions.webhook.retryDelayMs === "function" 
+              ? {backoff: filehookOptions.webhook.retryDelayMs} 
+              : {delay: filehookOptions.webhook.retryDelayMs ?? 250}
+            ),
         }, sendFileHookMethod);
 
-      if (!options.waitForPredicate) {
+      if (options.skipPredicateCheck) {
         return eventIds;
       }
 
