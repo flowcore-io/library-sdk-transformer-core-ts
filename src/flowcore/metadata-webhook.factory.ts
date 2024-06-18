@@ -1,4 +1,4 @@
-import { WebhookSignature } from "./webhook";
+import { WebhookSignature } from "./webhook"
 
 export const metadataWebhookFactory = <
   TMetadata extends Record<string, unknown> = Record<string, unknown>,
@@ -16,8 +16,8 @@ export const metadataWebhookFactory = <
         ...metadata,
         ...options?.metadata,
       },
-    } as Record<string, unknown>;
+    } as Record<string, unknown>
 
-    return webhook(parameters, optionsWithMetadata) as Promise<string>;
-  };
-};
+    return webhook(parameters, optionsWithMetadata) as Promise<string>
+  }
+}

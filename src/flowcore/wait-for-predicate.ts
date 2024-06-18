@@ -1,4 +1,4 @@
-import { retry } from "radash";
+import { retry } from "radash"
 
 /**
  * Waits for a predicate to be satisfied by repeatedly calling an entry function.
@@ -16,10 +16,10 @@ export async function waitForPredicate<T>(
   delay = 250,
 ) {
   await retry({ times, delay }, async () => {
-    const result = await entry();
+    const result = await entry()
     if (predicate(result)) {
-      return;
+      return
     }
-    throw new Error("Retry");
-  });
+    throw new Error("Retry")
+  })
 }
