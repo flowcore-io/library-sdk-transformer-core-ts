@@ -6,6 +6,7 @@ import { RedisPredicate, redisPredicateFactory } from "./redis-queue";
 import { waitForPredicate } from "./wait-for-predicate";
 import { EventDto } from "src/contracts";
 import { z } from "zod";
+import FlowcorePredicateException from "src/exceptions/predicate-exception";
 
 export interface WebhookOptions {
   webhookBaseUrl: string;
@@ -79,7 +80,7 @@ export async function sendWebhook<T>(
 
     if (!result.data.success || !result.data.eventId) {
       console.error("Failed to send webhook", result.data.error);
-      throw new FlowcoreWebhookSendException("Failed to send webhook");
+      throw new FlowcoreWebhookSendException("Failed to send webhook", result.data, aggregator, event, data);
     }
 
     if (options.localTransformBaseUrl && options.localTransformSecret) {
@@ -103,16 +104,16 @@ export async function sendWebhook<T>(
         });
         console.debug(`Sent to local transformer: ${result.data.eventId}`);
       } catch (error) {
-        console.error("Failed to send to local transformer");
-        throw error;
+        const message = error instanceof Error ? error.message : "Unknown error";
+        throw new FlowcoreWebhookSendException(`Failed to send to local transformer: ${message}`, error, aggregator, event, data);
       }
     }
 
     return result.data.eventId;
   } catch (error) {
     const message = getMessageFromWebhookError(error);
-    console.error("Failed to send webhook", message);
-    throw new FlowcoreWebhookSendException(message);
+    console.error(error);
+    throw new FlowcoreWebhookSendException(message, error, aggregator, event, data);
   }
 }
 
@@ -168,27 +169,32 @@ export function webhookFactory(webHookOptions: WebhookOptions) {
         return eventId;
       }
 
-      if (!options.predicateCheck) {
-        if (!redisPredicate) {
+      try {
+        if (!options.predicateCheck) {
+          if (!redisPredicate) {
+            return eventId;
+          }
+          await redisPredicate(eventId, options.times, options.delay);
+  
           return eventId;
         }
-        await redisPredicate(eventId, options.times, options.delay);
-
+  
+        if (!options.predicate) {
+          options.predicate = (result) => !!result;
+        }
+  
+        await waitForPredicate(
+          options.predicateCheck,
+          options.predicate,
+          options.times,
+          options.delay,
+        );
+  
         return eventId;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Unknown error";
+        throw new FlowcorePredicateException(message, error, eventId, aggregator, event, data);
       }
-
-      if (!options.predicate) {
-        options.predicate = (result) => !!result;
-      }
-
-      await waitForPredicate(
-        options.predicateCheck,
-        options.predicate,
-        options.times,
-        options.delay,
-      );
-
-      return eventId;
     };
   };
 }

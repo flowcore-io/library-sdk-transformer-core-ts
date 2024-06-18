@@ -1,7 +1,5 @@
 import Redis from "ioredis";
 
-import FlowcorePredicateException from "../exceptions/predicate-exception";
-
 import { waitForPredicate } from "./wait-for-predicate";
 
 export interface RedisPredicateOptions {
@@ -37,9 +35,7 @@ export function redisPredicateFactory(
       (result) => !!result,
       times,
       delay,
-    ).catch((error) => {
-      throw new FlowcorePredicateException(error.message);
-    });
+    );
   };
 }
 
