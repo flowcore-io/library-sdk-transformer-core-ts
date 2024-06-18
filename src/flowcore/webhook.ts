@@ -1,12 +1,14 @@
 import axios, { isAxiosError } from "axios";
 
 import FlowcoreWebhookSendException from "../exceptions/webhook-send-exception";
+import FlowcorePredicateException from "../exceptions/predicate-exception";
+import { EventDto } from "../contracts";
 
 import { RedisPredicate, redisPredicateFactory } from "./redis-queue";
 import { waitForPredicate } from "./wait-for-predicate";
-import { EventDto } from "src/contracts";
+
 import { z } from "zod";
-import FlowcorePredicateException from "src/exceptions/predicate-exception";
+
 
 export interface WebhookOptions {
   webhookBaseUrl: string;
