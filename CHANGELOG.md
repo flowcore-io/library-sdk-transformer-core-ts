@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.7.0](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v1.6.2...v1.7.0) (2024-06-18)
+
+
+### Features
+
+* add retry mechanism to webhook ([6cf4480](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/6cf44808e7a836357262396be696f50445dd40e6))
+
+
+### Bug Fixes
+
+* refactor ([0785234](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/078523428828d292a37710288a748b27cd7a2f7d))
+* refactor options ([59427d0](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/59427d0985b1c10ee7bdbca285fee7d0b3f8a329))
+
 ## [1.6.2](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v1.6.1...v1.6.2) (2024-06-18)
 
 
