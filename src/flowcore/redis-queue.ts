@@ -12,7 +12,7 @@ export type RedisQueueWriter = (eventId: string) => Promise<void>
 export type RedisPredicate = (
   eventId: string | string[],
   times?: number,
-  delay?: number,
+  delay?: number | ((count: number) => number),
 ) => Promise<void>
 
 export function redisPredicateFactory(

@@ -115,16 +115,19 @@ export function filehookFactory(filehookOptions: FilehookOptions) {
     return async <TPredicate = unknown>(
       data: FilehookData,
       options?: {
+        /*Skip all predicate checks (redis or custom)*/
         skipPredicateCheck?: boolean
+        /*Custom predicate check (skips redis check when defined)*/
         predicateCheck?: () => Promise<TPredicate>
+        /*Custom predicate (Only applicable for custom predicate check)*/
         predicate?: (result: TPredicate) => boolean
-        times?: number
-        delay?: number
+        retryCount?: number
+        retryDelayMs?: number | ((count: number) => number)
       },
     ) => {
       options = {
-        times: 20,
-        delay: 250,
+        retryCount: filehookOptions.webhook.retryCount ?? 20,
+        retryDelayMs: filehookOptions.webhook.retryDelayMs ?? 250,
         ...options,
       }
 
@@ -151,7 +154,7 @@ export function filehookFactory(filehookOptions: FilehookOptions) {
         if (!redisPredicate || !eventIds || !eventIds.length) {
           return eventIds
         }
-        await redisPredicate(eventIds, options.times, options.delay)
+        await redisPredicate(eventIds, options.retryCount, options.retryDelayMs)
         return eventIds
       }
 
@@ -162,8 +165,8 @@ export function filehookFactory(filehookOptions: FilehookOptions) {
       await waitForPredicate(
         options.predicateCheck,
         options.predicate,
-        options.times,
-        options.delay,
+        options.retryCount,
+        options.retryDelayMs,
       )
 
       return eventIds

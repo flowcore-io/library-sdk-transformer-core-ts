@@ -13,9 +13,12 @@ export async function waitForPredicate<T>(
   entry: () => Promise<T>,
   predicate: (result: T) => boolean,
   times = 20,
-  delay = 250,
+  delay: number | ((count: number) => number) = 250,
 ) {
-  await retry({ times, delay }, async () => {
+  const retryDelay = typeof delay === "number" ? delay : undefined
+  const retryBackoff = typeof delay === "function" ? delay : undefined
+
+  await retry({ times, delay: retryDelay, backoff: retryBackoff }, async () => {
     const result = await entry()
     if (predicate(result)) {
       return
