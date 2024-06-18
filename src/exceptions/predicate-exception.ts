@@ -10,6 +10,7 @@ export default class FlowcorePredicateException extends Error {
     this.eventId = eventId
     this.flowType = flowType
     this.eventType = eventType
+    this.event = event
     this.name = "FlowcorePredicateException";
   }
 }

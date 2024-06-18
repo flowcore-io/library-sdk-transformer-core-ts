@@ -9,6 +9,7 @@ export default class FlowcoreWebhookSendException extends Error {
     this.originalError = error
     this.flowType = flowType
     this.eventType = eventType
+    this.event = event
     this.name = "FlowcoreWebhookSendException";
   }
 }
