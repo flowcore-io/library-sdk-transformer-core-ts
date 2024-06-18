@@ -175,19 +175,19 @@ export function webhookFactory(webHookOptions: WebhookOptions) {
       data: TData,
       options?: {
         /*Skip all predicate checks (redis or custom)*/
-        skipPredicate?: boolean
+        skipPredicateCheck?: boolean
         /*Custom predicate check (skips redis check when defined)*/
         predicateCheck?: () => Promise<TPredicate>
         /*Custom predicate (Only applicable for custom predicate check)*/
         predicate?: (result: TPredicate) => boolean
         retryCount?: number
-        retryDelayMs?: number
+        retryDelayMs?: number | ((count: number) => number)
         metadata?: TMetadata
       },
     ) => {
       options = {
-        retryCount: 20,
-        retryDelayMs: 250,
+        retryCount: webHookOptions.redisPredicateCheck?.retryCount ?? 20,
+        retryDelayMs: webHookOptions.redisPredicateCheck?.retryDelayMs ?? 250,
         ...options,
       }
 
@@ -212,7 +212,7 @@ export function webhookFactory(webHookOptions: WebhookOptions) {
             sendWebhookMethod,
           )
 
-      if (options?.skipPredicate) {
+      if (options?.skipPredicateCheck) {
         return eventId
       }
 
