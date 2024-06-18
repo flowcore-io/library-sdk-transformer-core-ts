@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.6.1](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v1.6.0...v1.6.1) (2024-06-18)
+
+
+### Bug Fixes
+
+* Add more info to exceptions thrown ([384903a](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/384903a4f1a111c126670e8970d8bbd47e3b4a52))
+* remove log ([e8ee6b2](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/e8ee6b272af772fb5ddb8d139f30d1628c93af3b))
+* set event ([31f36ce](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/31f36cee58e798e752a1ed22d9d59f34125787c3))
+
 ## [1.6.0](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v1.5.0...v1.6.0) (2024-06-12)
 
 
