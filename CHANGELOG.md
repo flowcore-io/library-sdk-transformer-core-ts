@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.0](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v1.7.1...v1.8.0) (2024-06-21)
+
+
+### Features
+
+* Add constants file for time bucket format ([e10059a](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/e10059a248b8457b4fa93420cf8163ff283e7c43))
+
 ## [1.7.1](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v1.7.0...v1.7.1) (2024-06-18)
 
 
