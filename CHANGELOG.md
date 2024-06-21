@@ -1,5 +1,55 @@
 # Changelog
 
+## [1.7.1](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v1.7.0...v1.7.1) (2024-06-18)
+
+
+### Bug Fixes
+
+* fixes ([ceaf6cd](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/ceaf6cda1288f60aa40e25fa7854c0b88fa61788))
+
+## [1.7.0](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v1.6.2...v1.7.0) (2024-06-18)
+
+
+### Features
+
+* add retry mechanism to webhook ([6cf4480](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/6cf44808e7a836357262396be696f50445dd40e6))
+
+
+### Bug Fixes
+
+* refactor ([0785234](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/078523428828d292a37710288a748b27cd7a2f7d))
+* refactor options ([59427d0](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/59427d0985b1c10ee7bdbca285fee7d0b3f8a329))
+
+## [1.6.2](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v1.6.1...v1.6.2) (2024-06-18)
+
+
+### Bug Fixes
+
+* fix imports ([9c6bf90](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/9c6bf90070f1d0851d8a8e8c7da3f0cbdf9f988f))
+
+## [1.6.1](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v1.6.0...v1.6.1) (2024-06-18)
+
+
+### Bug Fixes
+
+* Add more info to exceptions thrown ([384903a](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/384903a4f1a111c126670e8970d8bbd47e3b4a52))
+* remove log ([e8ee6b2](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/e8ee6b272af772fb5ddb8d139f30d1628c93af3b))
+* set event ([31f36ce](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/31f36cee58e798e752a1ed22d9d59f34125787c3))
+
+## [1.6.0](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v1.5.0...v1.6.0) (2024-06-12)
+
+
+### Features
+
+* refactor to not depend on env vars ([41afbc0](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/41afbc0f7939e48976c936db56ad1e6dfd449f9c))
+
+## [1.5.0](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v1.4.0...v1.5.0) (2024-06-12)
+
+
+### Features
+
+* Add metadata-webhook.factory for handling metadata in webhooks ([41dfad8](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/41dfad8da58661b8a71674f8699f1fe0d6a92f8e))
+
 ## [1.4.0](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v1.3.2...v1.4.0) (2024-06-11)
 
 

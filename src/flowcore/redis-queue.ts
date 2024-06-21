@@ -1,84 +1,49 @@
-import Redis from "ioredis";
-import _ from "lodash";
+import Redis from "ioredis"
 
-import FlowcorePredicateException from "../exceptions/predicate-exception";
+import { waitForPredicate } from "./wait-for-predicate"
 
-import { waitForPredicate } from "./wait-for-predicate";
-
-let redis: Redis | null = null;
-
-if (process.env.REDIS_URL) {
-  redis = new Redis(process.env.REDIS_URL);
+export interface RedisPredicateOptions {
+  redisUrl: string
+  redisEventIdKey: string
 }
 
-if (!process.env.REDIS_KEY_PATTERN) {
-  console.warn(
-    `REDIS_KEY_PATTERN not set, using "generic:event-queue" as default`,
-  );
-}
+export type RedisQueueWriter = (eventId: string) => Promise<void>
 
-export const REDIS_EVENT_ID_KEY =
-  process.env.REDIS_KEY_PATTERN ?? "generic:event-queue";
+export type RedisPredicate = (
+  eventId: string | string[],
+  times?: number,
+  delay?: number | ((count: number) => number),
+) => Promise<void>
 
-export const redisPredicate = async <T>(
-  eventId?: string | string[],
-  fallback?: () => Promise<T>,
-  predicate?: (result: T) => boolean,
-  times = 20,
-  delay = 250,
-) => {
-  if (!redis || !eventId) {
-    if (!fallback) {
-      throw new Error("Redis not available and no fallback provided");
+export function redisPredicateFactory(
+  options: RedisPredicateOptions,
+): RedisPredicate {
+  const redis = new Redis(options.redisUrl)
+  return async (eventId?: string | string[], times = 20, delay = 250) => {
+    if (!eventId || eventId.length === 0) {
+      return
     }
-
-    console.debug("Redis not available, using fallback");
-
-    return waitForPredicate(
-      fallback,
-      predicate ?? ((result) => !!result),
-      times,
-      delay,
-    ).catch((error) => {
-      throw new FlowcorePredicateException(error.message);
-    });
-  }
-
-  if (eventId instanceof Array) {
+    const eventIds: string[] = Array.isArray(eventId) ? eventId : [eventId]
     return waitForPredicate(
       async () => {
         const loaded = await Promise.all(
-          eventId.map((id) => redis?.get(`${REDIS_EVENT_ID_KEY}:${id}`)),
-        );
+          eventIds.map((id) => redis?.get(`${options.redisEventIdKey}:${id}`)),
+        )
 
-        return _.every(loaded, (result) => !!result) as unknown as T;
+        return loaded.every((result) => !!result)
       },
-      predicate ?? ((result) => !!result),
+      (result) => !!result,
       times,
       delay,
-    ).catch((error) => {
-      throw new FlowcorePredicateException(error.message);
-    });
+    )
   }
+}
 
-  return waitForPredicate(
-    async () => {
-      const loaded = await redis?.get(`${REDIS_EVENT_ID_KEY}:${eventId}`);
-
-      return loaded as unknown as T;
-    },
-    predicate ?? ((result) => !!result),
-    times,
-    delay,
-  ).catch((error) => {
-    throw new FlowcorePredicateException(error.message);
-  });
-};
-
-export const writeToQueue = async (eventId: string) => {
-  if (!redis) {
-    return;
+export function redisQueueWriterFactory(
+  options: RedisPredicateOptions,
+): RedisQueueWriter {
+  const redis = new Redis(options.redisUrl)
+  return async (eventId: string) => {
+    await redis.set(`${options.redisEventIdKey}:${eventId}`, "1", "EX", "60")
   }
-
-  await redis.set(`${REDIS_EVENT_ID_KEY}:${eventId}`, "1", "EX", "60");
-};
+}

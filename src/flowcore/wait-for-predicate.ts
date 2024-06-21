@@ -1,6 +1,4 @@
-import { retry } from "radash";
-
-import FlowcorePredicateException from "../exceptions/predicate-exception";
+import { retry } from "radash"
 
 /**
  * Waits for a predicate to be satisfied by repeatedly calling an entry function.
@@ -15,15 +13,16 @@ export async function waitForPredicate<T>(
   entry: () => Promise<T>,
   predicate: (result: T) => boolean,
   times = 20,
-  delay = 250,
+  delay: number | ((count: number) => number) = 250,
 ) {
-  await retry({ times, delay }, async () => {
-    const result = await entry();
+  const retryDelay = typeof delay === "number" ? delay : undefined
+  const retryBackoff = typeof delay === "function" ? delay : undefined
+
+  await retry({ times, delay: retryDelay, backoff: retryBackoff }, async () => {
+    const result = await entry()
     if (predicate(result)) {
-      return;
+      return
     }
-    throw new Error("Retry");
-  }).catch((error) => {
-    throw new FlowcorePredicateException(error.message);
-  });
+    throw new Error("Retry")
+  })
 }

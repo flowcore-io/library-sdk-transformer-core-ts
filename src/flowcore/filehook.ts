@@ -1,15 +1,37 @@
-import axios from "axios";
-import * as process from "process";
-import { redisPredicate } from "./redis-queue";
-import { waitForPredicate } from "./wait-for-predicate";
+import axios from "axios"
+import { retry } from "radash"
+
+import { RedisPredicate, redisPredicateFactory } from "./redis-queue"
+import { waitForPredicate } from "./wait-for-predicate"
 
 export type FilehookData = {
-  fileId: string;
-  fileName: string;
-  fileType: string;
-  fileContent: Blob;
-  metadata?: Record<string, string>;
-};
+  fileId: string
+  fileName: string
+  fileType: string
+  fileContent: Blob
+  metadata?: Record<string, string>
+}
+
+export interface FilehookOptions {
+  webhook: {
+    baseUrl: string
+    tenant: string
+    dataCore: string
+    apiKey: string
+    /*How ofter to retry sending the webhook on fail*/
+    retryCount?: number
+    /*Delay between retries*/
+    retryDelayMs?: number | ((count: number) => number)
+  }
+  redisPredicateCheck?: {
+    url: string
+    keyPrefix: string
+    /*How ofter to retry redis predicate on fail*/
+    retryCount?: number
+    /*Delay between retries*/
+    retryDelayMs?: number | ((count: number) => number)
+  }
+}
 
 /**
  * Sends a file to the Flowcore filehook to the specified aggregator and event.
@@ -20,114 +42,134 @@ export type FilehookData = {
  * @throws An error if the webhook fails to send.
  */
 export async function sendFilehook(
+  filehookOptions: FilehookOptions,
   aggregator: string,
   event: string,
   data: FilehookData,
 ) {
   const url = [
-    process.env.FLOWCORE_WEBHOOK_BASEURL,
+    filehookOptions.webhook.baseUrl,
     "file",
-    process.env.FLOWCORE_TENANT,
-    process.env.FLOWCORE_DATACORE,
+    filehookOptions.webhook.tenant,
+    filehookOptions.webhook.dataCore,
     aggregator,
     event,
-  ].join("/");
+  ].join("/")
   try {
-    const formData = new FormData();
+    const formData = new FormData()
 
     if (data.metadata) {
       Object.entries(data.metadata).forEach(([key, value]) => {
-        formData.append(key, value);
-      });
+        formData.append(key, value)
+      })
     }
 
-    formData.append("fileId", data.fileId);
-    formData.append("type", data.fileType);
-    formData.append("file", data.fileContent, data.fileName);
+    formData.append("fileId", data.fileId)
+    formData.append("type", data.fileType)
+    formData.append("file", data.fileContent, data.fileName)
 
     const result = await axios.post<{
-      checksum: string;
-      eventIds?: string[];
+      checksum: string
+      eventIds?: string[]
     }>(url, formData, {
-      headers: { Authorization: `${process.env.FLOWCORE_KEY}` },
-    });
+      headers: { Authorization: `${filehookOptions.webhook.apiKey}` },
+    })
 
     if (!result.data.checksum) {
-      console.error("Failed to send filehook");
-      throw new Error("Failed to send filehook");
+      console.error("Failed to send filehook")
+      throw new Error("Failed to send filehook")
     }
 
-    return result.data.eventIds;
+    return result.data.eventIds
   } catch (error) {
     console.error(
       "Failed to send filehook",
       error instanceof Error ? error.message : error,
-    );
-    throw new Error("Failed to send filehook");
+    )
+    throw new Error("Failed to send filehook")
   }
 }
 
 /**
- * Creates a filehook factory function.
+ * Returns a function that creates a filehook with specified options and sends it based on aggregator and event.
  *
- * @param aggregator - The aggregator for the filehook.
- * @param event - The event for the filehook.
- * @param options - The options for the filehook factory.
- * @param options.times - The maximum number of times to retry the predicate check. Default is 20.
- * @param options.delay - The delay in milliseconds between each retry. Default is 250ms.
- * @param options.waitForPredicate - Whether to wait for the predicate to be satisfied. Default is true.
- * @param options.predicateCheck - The function that returns a promise to be evaluated.
- * @param options.predicate - The function that determines if the result satisfies the condition.
- * @returns A function that sends a filehook with the specified aggregator, event ids for each part of the file
- * @template TPredicate - The type of predicate to be checked.
+ * @param {FilehookOptions} filehookOptions - The options for creating the filehook including the Redis URL and event ID key.
+ * @return {(aggregator: string, event: string) =>
+ *  (data: FilehookData, options?: {
+ *    times?: number;
+ *    delay?: number;
+ *    waitForPredicate?: boolean;
+ *    predicateCheck?: () => Promise<unknown>;
+ *    predicate?: (result: unknown) => boolean;
+ * }) => Promise<string>} - The filehook factory function that creates and sends a filehook with optional predicate checking.
  */
-export function filehookFactory(aggregator: string, event: string) {
-  return async <TPredicate = unknown>(
-    data: FilehookData,
-    options?: {
-      times?: number;
-      delay?: number;
-      waitForPredicate?: boolean;
-      predicateCheck?: () => Promise<TPredicate>;
-      predicate?: (result: TPredicate) => boolean;
-    },
-  ) => {
-    options = {
-      times: 20,
-      delay: 250,
-      waitForPredicate: true,
-      ...options,
-    };
+export function filehookFactory(filehookOptions: FilehookOptions) {
+  let redisPredicate: RedisPredicate | undefined
+  if (filehookOptions.redisPredicateCheck) {
+    redisPredicate = redisPredicateFactory({
+      redisUrl: filehookOptions.redisPredicateCheck.url,
+      redisEventIdKey: filehookOptions.redisPredicateCheck.keyPrefix,
+    })
+  }
+  return (aggregator: string, event: string) => {
+    return async <TPredicate = unknown>(
+      data: FilehookData,
+      options?: {
+        /*Skip all predicate checks (redis or custom)*/
+        skipPredicateCheck?: boolean
+        /*Custom predicate check (skips redis check when defined)*/
+        predicateCheck?: () => Promise<TPredicate>
+        /*Custom predicate (Only applicable for custom predicate check)*/
+        predicate?: (result: TPredicate) => boolean
+        retryCount?: number
+        retryDelayMs?: number | ((count: number) => number)
+      },
+    ) => {
+      options = {
+        retryCount: filehookOptions.webhook.retryCount ?? 20,
+        retryDelayMs: filehookOptions.webhook.retryDelayMs ?? 250,
+        ...options,
+      }
 
-    const eventIds = await sendFilehook(aggregator, event, data);
+      const sendFileHookMethod = () =>
+        sendFilehook(filehookOptions, aggregator, event, data)
 
-    if (!options.waitForPredicate) {
-      return eventIds;
+      const eventIds = !filehookOptions.webhook.retryCount
+        ? await sendFileHookMethod()
+        : await retry(
+            {
+              times: filehookOptions.webhook.retryCount,
+              ...(typeof filehookOptions.webhook.retryDelayMs === "function"
+                ? { backoff: filehookOptions.webhook.retryDelayMs }
+                : { delay: filehookOptions.webhook.retryDelayMs ?? 250 }),
+            },
+            sendFileHookMethod,
+          )
+
+      if (options.skipPredicateCheck) {
+        return eventIds
+      }
+
+      if (!options.predicateCheck) {
+        if (!redisPredicate || !eventIds || !eventIds.length) {
+          return eventIds
+        }
+        await redisPredicate(eventIds, options.retryCount, options.retryDelayMs)
+        return eventIds
+      }
+
+      if (!options.predicate) {
+        options.predicate = (result) => !!result
+      }
+
+      await waitForPredicate(
+        options.predicateCheck,
+        options.predicate,
+        options.retryCount,
+        options.retryDelayMs,
+      )
+
+      return eventIds
     }
-
-    if (!options.predicateCheck) {
-      await redisPredicate(
-        eventIds,
-        undefined,
-        undefined,
-        options.times,
-        options.delay,
-      );
-
-      return eventIds;
-    }
-
-    if (!options.predicate) {
-      options.predicate = (result) => !!result;
-    }
-
-    await waitForPredicate(
-      options.predicateCheck,
-      options.predicate,
-      options.times,
-      options.delay,
-    );
-
-    return eventIds;
-  };
+  }
 }
