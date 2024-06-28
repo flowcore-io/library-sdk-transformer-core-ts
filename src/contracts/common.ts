@@ -6,6 +6,7 @@ export const EventDto = z.object({
   eventType: z.string(),
   validTime: z.string(),
   payload: z.any(),
+  metadata: z.record(z.any()),
 })
 
 export const EventMetadataDto = EventDto.omit({
