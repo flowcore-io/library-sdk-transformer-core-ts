@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.9.0](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v1.8.0...v1.9.0) (2024-06-28)
+
+
+### Features
+
+* Add metadata field to EventDto ([478294c](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/478294c51d606260093e35ab20f6d6e9d374d9ae))
+* Add metadata field to EventDto ([336d208](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/336d208ac32feaacb363a96bba40381b5be47466))
+
 ## [1.8.0](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v1.7.1...v1.8.0) (2024-06-21)
 
 
