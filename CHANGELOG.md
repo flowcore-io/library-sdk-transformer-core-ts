@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.1](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v1.9.0...v1.9.1) (2024-07-23)
+
+
+### Bug Fixes
+
+* improved error clarity ([3d7e212](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/3d7e2126edab4daea4edd2849d687df639eb8e21))
+
 ## [1.9.0](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v1.8.0...v1.9.0) (2024-06-28)
 
 
