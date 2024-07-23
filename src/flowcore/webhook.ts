@@ -93,9 +93,19 @@ export async function sendWebhook<T>(
       error?: string
     }>(url, data, { params: { key: options.webhook.apiKey }, headers })
 
-    if (!result.data.success || !result.data.eventId) {
+    if(!result.data.success) {
       throw new FlowcoreWebhookSendException(
-        "Failed to send webhook",
+        `Expected {"success": true} from response, got {"success": ${result.data.success}}`,
+        result.data,
+        aggregator,
+        event,
+        data,
+      )
+    }
+
+    if(!result.data.eventId) {
+      throw new FlowcoreWebhookSendException(
+        `Missing eventId from response`,
         result.data,
         aggregator,
         event,
