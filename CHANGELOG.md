@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.2](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v1.9.1...v1.9.2) (2024-08-22)
+
+
+### Bug Fixes
+
+* output legitimate error when success is false, for better context ([9bca416](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/9bca4169a09a5b45859c70f20f42fc8980ae93ba))
+
 ## [1.9.1](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v1.9.0...v1.9.1) (2024-07-23)
 
 
