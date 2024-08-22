@@ -96,7 +96,7 @@ export async function sendWebhook<T>(
     if(!result.data.success) {
       throw new FlowcoreWebhookSendException(
         `Expected {"success": true} from response, got {"success": ${result.data.success}}`,
-        result.data,
+        result.data.error,
         aggregator,
         event,
         data,
