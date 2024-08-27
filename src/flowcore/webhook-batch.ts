@@ -1,5 +1,4 @@
 import axios, { isAxiosError } from "axios"
-import { retry } from "radash"
 
 import { EventDto } from "../contracts"
 import FlowcorePredicateException from "../exceptions/predicate-exception"
@@ -10,16 +9,12 @@ import { waitForPredicate } from "./wait-for-predicate"
 
 import { z } from "zod"
 
-export interface WebhookOptions {
+export interface WebhookBatchOptions {
   webhook: {
     baseUrl: string
     tenant: string
     dataCore: string
     apiKey: string
-    /*How ofter to retry sending the webhook on fail*/
-    retryCount?: number
-    /*Delay between retries*/
-    retryDelayMs?: number | ((count: number) => number)
   }
   localTransform?: {
     /* Skip sending webhook and sends event to local transformer */
@@ -37,11 +32,11 @@ export interface WebhookOptions {
   }
 }
 
-export type WebhookSignature<
+export type WebhookBatchSignature<
   TData,
   TMetadata extends Record<string, unknown> = Record<string, unknown>,
 > = <TPredicate = unknown>(
-  data: TData,
+  data: TData[],
   options?:
     | {
         times?: number | undefined
@@ -64,16 +59,16 @@ export type WebhookSignature<
  * @returns A promise that resolves when the webhook is sent successfully with the event id.
  * @throws An error if the webhook fails to send.
  */
-export async function sendWebhook<T>(
-  options: WebhookOptions,
+export async function sendWebhookBatch<T>(
+  options: WebhookBatchOptions,
   aggregator: string,
   event: string,
-  data: T,
+  data: T[],
   metadata?: Record<string, unknown>,
 ) {
   const url = [
     options.webhook.baseUrl,
-    "event",
+    "events",
     options.webhook.tenant,
     options.webhook.dataCore,
     aggregator,
@@ -93,16 +88,16 @@ export async function sendWebhook<T>(
       ? {
           data: {
             success: true,
-            eventId: "00000000-0000-0000-0000-000000000000",
+            eventIds: data.map(() => "00000000-0000-0000-0000-000000000000"),
           } as {
             success: boolean
-            eventId?: string
+            eventIds?: string[]
             error?: string
           },
         }
       : await axios.post<{
           success: boolean
-          eventId?: string
+          eventIds?: string[]
           error?: string
         }>(url, data, { params: { key: options.webhook.apiKey }, headers })
 
@@ -116,9 +111,9 @@ export async function sendWebhook<T>(
       )
     }
 
-    if (!result.data.eventId) {
+    if (result.data.eventIds?.length !== data.length) {
       throw new FlowcoreWebhookSendException(
-        `Missing eventId from response`,
+        `Invalid number of eventIds from response`,
         result.data,
         aggregator,
         event,
@@ -133,20 +128,25 @@ export async function sendWebhook<T>(
           aggregator,
         ].join("/")
 
-        const localEvent: z.infer<typeof EventDto> = {
-          eventId: result.data.eventId,
-          aggregator,
-          eventType: event,
-          validTime: new Date().toISOString(),
-          payload: data,
-        }
-
-        await axios.post(transformerUrl, localEvent, {
-          headers: {
-            "X-Secret": options.localTransform.secret,
-          },
-        })
-        console.debug(`Sent to local transformer: ${result.data.eventId}`)
+        await Promise.all(
+          result.data.eventIds.map((eventId, index) => {
+            const localEvent: z.infer<typeof EventDto> = {
+              eventId,
+              aggregator,
+              eventType: event,
+              validTime: new Date().toISOString(),
+              payload: data[index],
+            }
+            return axios.post(transformerUrl, localEvent, {
+              headers: {
+                "X-Secret": options.localTransform?.secret ?? "",
+              },
+            })
+          }),
+        )
+        console.debug(
+          `Sent to local transformer: ${result.data.eventIds.length} events`,
+        )
       } catch (error) {
         const message = error instanceof Error ? error.message : "Unknown error"
         throw new FlowcoreWebhookSendException(
@@ -159,7 +159,7 @@ export async function sendWebhook<T>(
       }
     }
 
-    return result.data.eventId
+    return result.data.eventIds
   } catch (error) {
     const message = getMessageFromWebhookError(error)
     throw new FlowcoreWebhookSendException(
@@ -175,10 +175,10 @@ export async function sendWebhook<T>(
 /**
  * Returns a function that sends a webhook to the specified aggregator and event with optional metadata and predicate checking.
  *
- * @param {WebhookOptions} webHookOptions - The webhook options including the webhook base URL, tenant, data core, API key, and optional local transformer base URL and Redis URL with event ID key.
+ * @param {WebhookBatchOptions} webHookOptions - The webhook options including the webhook base URL, tenant, data core, API key, and optional local transformer base URL and Redis URL with event ID key.
  * @return - The webhook factory function that returns a function that sends a webhook with optional predicate checking.
  */
-export function webhookFactory(webHookOptions: WebhookOptions) {
+export function webhookBatchFactory(webHookOptions: WebhookBatchOptions) {
   let redisPredicate: RedisPredicate | undefined
   if (webHookOptions.redisPredicateCheck) {
     redisPredicate = redisPredicateFactory({
@@ -195,7 +195,7 @@ export function webhookFactory(webHookOptions: WebhookOptions) {
     event: string,
   ) => {
     return async <TPredicate = unknown>(
-      data: TData,
+      data: TData[],
       options?: {
         /*Skip all predicate checks (redis or custom)*/
         skipPredicateCheck?: boolean
@@ -215,7 +215,7 @@ export function webhookFactory(webHookOptions: WebhookOptions) {
       }
 
       const sendWebhookMethod = () =>
-        sendWebhook<TData>(
+        sendWebhookBatch<TData>(
           webHookOptions,
           aggregator,
           event,
@@ -223,33 +223,27 @@ export function webhookFactory(webHookOptions: WebhookOptions) {
           options?.metadata,
         )
 
-      const eventId = !webHookOptions.webhook.retryCount
-        ? await sendWebhookMethod()
-        : await retry(
-            {
-              times: webHookOptions.webhook.retryCount,
-              ...(typeof webHookOptions.webhook.retryDelayMs === "function"
-                ? { backoff: webHookOptions.webhook.retryDelayMs }
-                : { delay: webHookOptions.webhook.retryDelayMs ?? 250 }),
-            },
-            sendWebhookMethod,
-          )
+      const eventIds = await sendWebhookMethod()
 
       if (options?.skipPredicateCheck) {
-        return eventId
+        return eventIds
       }
 
       try {
         if (!options.predicateCheck) {
           if (!redisPredicate) {
-            return eventId
+            return eventIds
           }
-          await redisPredicate(
-            eventId,
-            options.retryCount,
-            options.retryDelayMs,
+          await Promise.all(
+            eventIds.map((eventId) =>
+              redisPredicate?.(
+                eventId,
+                options?.retryCount,
+                options?.retryDelayMs,
+              ),
+            ),
           )
-          return eventId
+          return eventIds
         }
 
         if (!options.predicate) {
@@ -263,13 +257,13 @@ export function webhookFactory(webHookOptions: WebhookOptions) {
           options.retryDelayMs,
         )
 
-        return eventId
+        return eventIds
       } catch (error) {
         const message = error instanceof Error ? error.message : "Unknown error"
         throw new FlowcorePredicateException(
           message,
           error,
-          eventId,
+          eventIds.join(", "),
           aggregator,
           event,
           data,
