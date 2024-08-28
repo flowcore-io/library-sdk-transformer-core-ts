@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.10.0](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v1.9.2...v1.10.0) (2024-08-28)
+
+
+### Features
+
+* add webhook batch factory + skip webhook option on local transformer ([992e954](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/992e9540f61c8706ac0cdcf4b42aab8b02a5d4df))
+* move send and sendBatch into the same factory ([53e5881](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/53e5881c64e04748dddf3d3a9609ba74631f215d))
+
 ## [1.9.2](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v1.9.1...v1.9.2) (2024-08-22)
 
 
