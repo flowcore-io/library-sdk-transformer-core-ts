@@ -1,6 +1,6 @@
-import axios from "axios"
 import { retry } from "radash"
 
+import { postJson } from "./http"
 import { RedisPredicate, redisPredicateFactory } from "./redis-queue"
 import { waitForPredicate } from "./wait-for-predicate"
 
@@ -68,19 +68,19 @@ export async function sendFilehook(
     formData.append("type", data.fileType)
     formData.append("file", data.fileContent, data.fileName)
 
-    const result = await axios.post<{
+    const result = await postJson<{
       checksum: string
       eventIds?: string[]
     }>(url, formData, {
       headers: { Authorization: `${filehookOptions.webhook.apiKey}` },
     })
 
-    if (!result.data.checksum) {
+    if (!result.data?.checksum) {
       console.error("Failed to send filehook")
       throw new Error("Failed to send filehook")
     }
 
-    return result.data.eventIds
+    return result.data?.eventIds
   } catch (error) {
     console.error(
       "Failed to send filehook",

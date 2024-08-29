@@ -1,4 +1,3 @@
-import axios, { isAxiosError } from "axios"
 import { retry } from "radash"
 
 import { EventDto } from "../contracts"
@@ -9,6 +8,7 @@ import { RedisPredicate, redisPredicateFactory } from "./redis-queue"
 import { waitForPredicate } from "./wait-for-predicate"
 
 import { z } from "zod"
+import { postJson } from "./http"
 
 export interface WebhookOptions {
   webhook: {
@@ -100,7 +100,7 @@ export async function sendWebhook<T>(
             error?: string
           },
         }
-      : await axios.post<{
+      : await postJson<{
           success: boolean
           eventId?: string
           error?: string
@@ -141,7 +141,7 @@ export async function sendWebhook<T>(
           payload: data,
         }
 
-        await axios.post(transformerUrl, localEvent, {
+        await postJson(transformerUrl, localEvent, {
           headers: {
             "X-Secret": options.localTransform.secret,
           },
@@ -218,7 +218,7 @@ export async function sendWebhookBatch<T>(
             error?: string
           },
         }
-      : await axios.post<{
+      : await postJson<{
           success: boolean
           eventIds?: string[]
           error?: string
@@ -260,7 +260,7 @@ export async function sendWebhookBatch<T>(
               validTime: new Date().toISOString(),
               payload: data[index],
             }
-            return axios.post(transformerUrl, localEvent, {
+            return postJson(transformerUrl, localEvent, {
               headers: {
                 "X-Secret": options.localTransform?.secret ?? "",
               },
@@ -483,17 +483,17 @@ export function webhookFactory(webHookOptions: WebhookOptions) {
 }
 
 function getMessageFromWebhookError(error: any): string {
-  if (isAxiosError(error)) {
-    const data = error.response?.data
-    if (
-      data !== null &&
-      typeof data === "object" &&
-      typeof data.message === "string"
-    ) {
-      return data.message
-    }
-  } else if (error instanceof Error) {
+  if (error instanceof Error) {
     return error.message
   }
+
+  if (typeof error === "object" && error !== null) {
+    return JSON.stringify(error)
+  }
+
+  if (typeof error === "string") {
+    return error
+  }
+
   return "Unknown error"
 }
