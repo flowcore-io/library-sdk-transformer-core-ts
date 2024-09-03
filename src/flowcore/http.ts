@@ -4,7 +4,7 @@ export type FetchResponse<T> = {
   data: T
 }
 
-async function sendJson<TResult, TBody = unknown>(
+async function send<TResult, TBody = unknown>(
   url: string,
   method: string,
   body: TBody | null,
@@ -12,7 +12,7 @@ async function sendJson<TResult, TBody = unknown>(
 ): Promise<FetchResponse<TResult>> {
   const params: Record<string, unknown> = {
     method,
-    headers,
+    headers: headers,
   }
 
   if (body) {
@@ -38,17 +38,21 @@ async function sendJson<TResult, TBody = unknown>(
   }
 }
 
+export function postRaw<TResult, TBody = unknown>(
+  url: string,
+  body: TBody,
+  headers: Record<string, unknown>,
+): Promise<FetchResponse<TResult>> {
+  return send(url, "POST", body, headers)
+}
+
 export function postJson<TResult, TBody = unknown>(
   url: string,
   body: TBody,
   headers: Record<string, unknown>,
 ): Promise<FetchResponse<TResult>> {
-  return sendJson(url, "POST", body, headers)
-}
-
-export function getJson<TResult>(
-  url: string,
-  headers: Record<string, unknown>,
-): Promise<FetchResponse<TResult>> {
-  return sendJson(url, "GET", null, headers)
+  return send(url, "POST", JSON.stringify(body), {
+    "Content-Type": "application/json",
+    ...headers,
+  })
 }

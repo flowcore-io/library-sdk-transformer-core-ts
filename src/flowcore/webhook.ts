@@ -79,6 +79,9 @@ export async function sendWebhook<T>(
     aggregator,
     event,
   ].join("/")
+
+  const authorizedUrl = `${url}?key=${options.webhook.apiKey}`
+
   try {
     const headers = {}
 
@@ -104,7 +107,7 @@ export async function sendWebhook<T>(
           success: boolean
           eventId?: string
           error?: string
-        }>(url, data, { params: { key: options.webhook.apiKey }, headers })
+        }>(authorizedUrl, data, headers)
 
     if (!result.data.success) {
       throw new FlowcoreWebhookSendException(
@@ -142,9 +145,7 @@ export async function sendWebhook<T>(
         }
 
         await postJson(transformerUrl, localEvent, {
-          headers: {
-            "X-Secret": options.localTransform.secret,
-          },
+          "X-Secret": options.localTransform.secret,
         })
         console.debug(`Sent to local transformer: ${result.data.eventId}`)
       } catch (error) {
@@ -197,6 +198,9 @@ export async function sendWebhookBatch<T>(
     aggregator,
     event,
   ].join("/")
+
+  const authorizedUrl = `${url}?key=${options.webhook.apiKey}`
+
   try {
     const headers = {}
 
@@ -222,7 +226,7 @@ export async function sendWebhookBatch<T>(
           success: boolean
           eventIds?: string[]
           error?: string
-        }>(url, data, { params: { key: options.webhook.apiKey }, headers })
+        }>(authorizedUrl, data, headers)
 
     if (!result.data.success) {
       throw new FlowcoreWebhookSendException(
@@ -261,9 +265,7 @@ export async function sendWebhookBatch<T>(
               payload: data[index],
             }
             return postJson(transformerUrl, localEvent, {
-              headers: {
-                "X-Secret": options.localTransform?.secret ?? "",
-              },
+              "X-Secret": options.localTransform?.secret ?? "",
             })
           }),
         )

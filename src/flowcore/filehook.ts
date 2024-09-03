@@ -1,6 +1,6 @@
 import { retry } from "radash"
 
-import { postJson } from "./http"
+import { postRaw } from "./http"
 import { RedisPredicate, redisPredicateFactory } from "./redis-queue"
 import { waitForPredicate } from "./wait-for-predicate"
 
@@ -68,11 +68,11 @@ export async function sendFilehook(
     formData.append("type", data.fileType)
     formData.append("file", data.fileContent, data.fileName)
 
-    const result = await postJson<{
+    const result = await postRaw<{
       checksum: string
       eventIds?: string[]
     }>(url, formData, {
-      headers: { Authorization: `${filehookOptions.webhook.apiKey}` },
+      Authorization: `${filehookOptions.webhook.apiKey}`,
     })
 
     if (!result.data?.checksum) {
