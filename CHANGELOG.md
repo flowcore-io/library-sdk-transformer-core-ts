@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.10.1](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v1.10.0...v1.10.1) (2024-09-03)
+
+
+### Bug Fixes
+
+* :bug: Corrected failing fetch requests ([f6f1589](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/f6f15898ada26c49632318e444a08c3ccfe4bbc6))
+* replaced axios with fetch, to make it bun compatible ([76d649e](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/76d649ee8f5626cc5e12f00a2938c121ff0a2d77))
+
 ## [1.10.0](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v1.9.2...v1.10.0) (2024-08-28)
 
 
