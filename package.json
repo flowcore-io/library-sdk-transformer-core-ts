@@ -64,6 +64,7 @@
     }
   },
   "dependencies": {
+    "@sinclair/typebox": "0.33.9",
     "ioredis": "5.4.1",
     "radash": "12.1.0",
     "zod": "3.23.8"
