@@ -1,8 +1,6 @@
-import { WebhookSignature } from "./webhook"
+import type { WebhookSignature } from "./webhook"
 
-export const metadataWebhookFactory = <
-  TMetadata extends Record<string, unknown> = Record<string, unknown>,
->(
+export const metadataWebhookFactory = <TMetadata extends Record<string, unknown> = Record<string, unknown>>(
   metadata: TMetadata,
 ) => {
   return async <TData>(

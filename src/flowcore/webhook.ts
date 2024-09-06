@@ -1,13 +1,13 @@
 import { retry } from "radash"
 
-import { EventDto } from "../contracts"
+import type { EventDto } from "../contracts"
 import FlowcorePredicateException from "../exceptions/predicate-exception"
 import FlowcoreWebhookSendException from "../exceptions/webhook-send-exception"
 
-import { RedisPredicate, redisPredicateFactory } from "./redis-queue"
+import { type RedisPredicate, redisPredicateFactory } from "./redis-queue"
 import { waitForPredicate } from "./wait-for-predicate"
 
-import { z } from "zod"
+import type { z } from "zod"
 import { postJson } from "./http"
 
 export interface WebhookOptions {
@@ -37,10 +37,9 @@ export interface WebhookOptions {
   }
 }
 
-export type WebhookSignature<
-  TData,
-  TMetadata extends Record<string, unknown> = Record<string, unknown>,
-> = <TPredicate = unknown>(
+export type WebhookSignature<TData, TMetadata extends Record<string, unknown> = Record<string, unknown>> = <
+  TPredicate = unknown,
+>(
   data: TData,
   options?:
     | {
@@ -86,10 +85,7 @@ export async function sendWebhook<T>(
     const headers = {}
 
     if (metadata) {
-      headers["x-flowcore-metadata-json"] = Buffer.from(
-        JSON.stringify(metadata),
-        "utf-8",
-      ).toString("base64")
+      headers["x-flowcore-metadata-json"] = Buffer.from(JSON.stringify(metadata), "utf-8").toString("base64")
     }
 
     const result = options.localTransform?.skipWebhook
@@ -120,21 +116,12 @@ export async function sendWebhook<T>(
     }
 
     if (!result.data.eventId) {
-      throw new FlowcoreWebhookSendException(
-        `Missing eventId from response`,
-        result.data,
-        aggregator,
-        event,
-        data,
-      )
+      throw new FlowcoreWebhookSendException("Missing eventId from response", result.data, aggregator, event, data)
     }
 
     if (options.localTransform) {
       try {
-        const transformerUrl = [
-          options.localTransform.baseUrl,
-          aggregator,
-        ].join("/")
+        const transformerUrl = [options.localTransform.baseUrl, aggregator].join("/")
 
         const localEvent: z.infer<typeof EventDto> = {
           eventId: result.data.eventId,
@@ -163,13 +150,7 @@ export async function sendWebhook<T>(
     return result.data.eventId
   } catch (error) {
     const message = getMessageFromWebhookError(error)
-    throw new FlowcoreWebhookSendException(
-      message,
-      error,
-      aggregator,
-      event,
-      data,
-    )
+    throw new FlowcoreWebhookSendException(message, error, aggregator, event, data)
   }
 }
 
@@ -205,10 +186,7 @@ export async function sendWebhookBatch<T>(
     const headers = {}
 
     if (metadata) {
-      headers["x-flowcore-metadata-json"] = Buffer.from(
-        JSON.stringify(metadata),
-        "utf-8",
-      ).toString("base64")
+      headers["x-flowcore-metadata-json"] = Buffer.from(JSON.stringify(metadata), "utf-8").toString("base64")
     }
 
     const result = options.localTransform?.skipWebhook
@@ -239,21 +217,12 @@ export async function sendWebhookBatch<T>(
     }
 
     if (result.data.eventIds?.length !== data.length) {
-      throw new FlowcoreWebhookSendException(
-        `Invalid eventIds from response`,
-        result.data,
-        aggregator,
-        event,
-        data,
-      )
+      throw new FlowcoreWebhookSendException("Invalid eventIds from response", result.data, aggregator, event, data)
     }
 
     if (options.localTransform) {
       try {
-        const transformerUrl = [
-          options.localTransform.baseUrl,
-          aggregator,
-        ].join("/")
+        const transformerUrl = [options.localTransform.baseUrl, aggregator].join("/")
 
         await Promise.all(
           result.data.eventIds.map((eventId, index) => {
@@ -285,13 +254,7 @@ export async function sendWebhookBatch<T>(
     return result.data.eventIds
   } catch (error) {
     const message = getMessageFromWebhookError(error)
-    throw new FlowcoreWebhookSendException(
-      message,
-      error,
-      aggregator,
-      event,
-      data,
-    )
+    throw new FlowcoreWebhookSendException(message, error, aggregator, event, data)
   }
 }
 
@@ -310,16 +273,13 @@ export function webhookFactory(webHookOptions: WebhookOptions) {
     })
   }
 
-  return <
-    TData,
-    TMetadata extends Record<string, unknown> = Record<string, unknown>,
-  >(
+  return <TData, TMetadata extends Record<string, unknown> = Record<string, unknown>>(
     aggregator: string,
     event: string,
   ) => {
     const send = async <TPredicate = unknown>(
       data: TData,
-      options?: {
+      _options?: {
         /*Skip all predicate checks (redis or custom)*/
         skipPredicateCheck?: boolean
         /*Custom predicate check (skips redis check when defined)*/
@@ -331,20 +291,13 @@ export function webhookFactory(webHookOptions: WebhookOptions) {
         metadata?: TMetadata
       },
     ) => {
-      options = {
+      const options = {
         retryCount: webHookOptions.redisPredicateCheck?.retryCount ?? 20,
         retryDelayMs: webHookOptions.redisPredicateCheck?.retryDelayMs ?? 250,
-        ...options,
+        ..._options,
       }
 
-      const sendWebhookMethod = () =>
-        sendWebhook<TData>(
-          webHookOptions,
-          aggregator,
-          event,
-          data,
-          options?.metadata,
-        )
+      const sendWebhookMethod = () => sendWebhook<TData>(webHookOptions, aggregator, event, data, options?.metadata)
 
       const eventId = !webHookOptions.webhook.retryCount
         ? await sendWebhookMethod()
@@ -367,11 +320,7 @@ export function webhookFactory(webHookOptions: WebhookOptions) {
           if (!redisPredicate) {
             return eventId
           }
-          await redisPredicate(
-            eventId,
-            options.retryCount,
-            options.retryDelayMs,
-          )
+          await redisPredicate(eventId, options.retryCount, options.retryDelayMs)
           return eventId
         }
 
@@ -379,30 +328,18 @@ export function webhookFactory(webHookOptions: WebhookOptions) {
           options.predicate = (result) => !!result
         }
 
-        await waitForPredicate(
-          options.predicateCheck,
-          options.predicate,
-          options.retryCount,
-          options.retryDelayMs,
-        )
+        await waitForPredicate(options.predicateCheck, options.predicate, options.retryCount, options.retryDelayMs)
 
         return eventId
       } catch (error) {
         const message = error instanceof Error ? error.message : "Unknown error"
-        throw new FlowcorePredicateException(
-          message,
-          error,
-          eventId,
-          aggregator,
-          event,
-          data,
-        )
+        throw new FlowcorePredicateException(message, error, eventId, aggregator, event, data)
       }
     }
 
     const sendBatch = async <TPredicate = unknown>(
       data: TData[],
-      options?: {
+      _options?: {
         /*Skip all predicate checks (redis or custom)*/
         skipPredicateCheck?: boolean
         /*Custom predicate check (skips redis check when defined)*/
@@ -414,20 +351,14 @@ export function webhookFactory(webHookOptions: WebhookOptions) {
         metadata?: TMetadata
       },
     ) => {
-      options = {
+      const options = {
         retryCount: webHookOptions.redisPredicateCheck?.retryCount ?? 20,
         retryDelayMs: webHookOptions.redisPredicateCheck?.retryDelayMs ?? 250,
-        ...options,
+        ..._options,
       }
 
       const sendWebhookMethod = () =>
-        sendWebhookBatch<TData>(
-          webHookOptions,
-          aggregator,
-          event,
-          data,
-          options?.metadata,
-        )
+        sendWebhookBatch<TData>(webHookOptions, aggregator, event, data, options?.metadata)
 
       const eventIds = await sendWebhookMethod()
 
@@ -441,13 +372,7 @@ export function webhookFactory(webHookOptions: WebhookOptions) {
             return eventIds
           }
           await Promise.all(
-            eventIds.map((eventId) =>
-              redisPredicate?.(
-                eventId,
-                options?.retryCount,
-                options?.retryDelayMs,
-              ),
-            ),
+            eventIds.map((eventId) => redisPredicate?.(eventId, options?.retryCount, options?.retryDelayMs)),
           )
           return eventIds
         }
@@ -456,24 +381,12 @@ export function webhookFactory(webHookOptions: WebhookOptions) {
           options.predicate = (result) => !!result
         }
 
-        await waitForPredicate(
-          options.predicateCheck,
-          options.predicate,
-          options.retryCount,
-          options.retryDelayMs,
-        )
+        await waitForPredicate(options.predicateCheck, options.predicate, options.retryCount, options.retryDelayMs)
 
         return eventIds
       } catch (error) {
         const message = error instanceof Error ? error.message : "Unknown error"
-        throw new FlowcorePredicateException(
-          message,
-          error,
-          eventIds.join(", "),
-          aggregator,
-          event,
-          data,
-        )
+        throw new FlowcorePredicateException(message, error, eventIds.join(", "), aggregator, event, data)
       }
     }
 
@@ -484,6 +397,7 @@ export function webhookFactory(webHookOptions: WebhookOptions) {
   }
 }
 
+// biome-ignore lint/suspicious/noExplicitAny: <explanation>
 function getMessageFromWebhookError(error: any): string {
   if (error instanceof Error) {
     return error.message

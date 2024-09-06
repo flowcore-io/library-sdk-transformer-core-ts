@@ -1,7 +1,7 @@
 import { retry } from "radash"
 
 import { postRaw } from "./http"
-import { RedisPredicate, redisPredicateFactory } from "./redis-queue"
+import { type RedisPredicate, redisPredicateFactory } from "./redis-queue"
 import { waitForPredicate } from "./wait-for-predicate"
 
 export type FilehookData = {
@@ -59,6 +59,7 @@ export async function sendFilehook(
     const formData = new FormData()
 
     if (data.metadata) {
+      // biome-ignore lint/complexity/noForEach: <explanation>
       Object.entries(data.metadata).forEach(([key, value]) => {
         formData.append(key, value)
       })
@@ -82,10 +83,7 @@ export async function sendFilehook(
 
     return result.data?.eventIds
   } catch (error) {
-    console.error(
-      "Failed to send filehook",
-      error instanceof Error ? error.message : error,
-    )
+    console.error("Failed to send filehook", error instanceof Error ? error.message : error)
     throw new Error("Failed to send filehook")
   }
 }
@@ -114,7 +112,7 @@ export function filehookFactory(filehookOptions: FilehookOptions) {
   return (aggregator: string, event: string) => {
     return async <TPredicate = unknown>(
       data: FilehookData,
-      options?: {
+      _options?: {
         /*Skip all predicate checks (redis or custom)*/
         skipPredicateCheck?: boolean
         /*Custom predicate check (skips redis check when defined)*/
@@ -125,14 +123,13 @@ export function filehookFactory(filehookOptions: FilehookOptions) {
         retryDelayMs?: number | ((count: number) => number)
       },
     ) => {
-      options = {
+      const options = {
         retryCount: filehookOptions.webhook.retryCount ?? 20,
         retryDelayMs: filehookOptions.webhook.retryDelayMs ?? 250,
-        ...options,
+        ..._options,
       }
 
-      const sendFileHookMethod = () =>
-        sendFilehook(filehookOptions, aggregator, event, data)
+      const sendFileHookMethod = () => sendFilehook(filehookOptions, aggregator, event, data)
 
       const eventIds = !filehookOptions.webhook.retryCount
         ? await sendFileHookMethod()
@@ -162,12 +159,7 @@ export function filehookFactory(filehookOptions: FilehookOptions) {
         options.predicate = (result) => !!result
       }
 
-      await waitForPredicate(
-        options.predicateCheck,
-        options.predicate,
-        options.retryCount,
-        options.retryDelayMs,
-      )
+      await waitForPredicate(options.predicateCheck, options.predicate, options.retryCount, options.retryDelayMs)
 
       return eventIds
     }

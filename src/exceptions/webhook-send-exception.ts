@@ -4,13 +4,7 @@ export default class FlowcoreWebhookSendException extends Error {
   public eventType: string
   public event: unknown
 
-  constructor(
-    message: string,
-    error: unknown,
-    flowType: string,
-    eventType: string,
-    event: unknown,
-  ) {
+  constructor(message: string, error: unknown, flowType: string, eventType: string, event: unknown) {
     super(`Failed to send webhook: ${message}`)
     this.originalError = error
     this.flowType = flowType
