@@ -261,7 +261,6 @@ export class WebhookBuilder {
         ? { "x-flowcore-metadata-json": Buffer.from(JSON.stringify(metadata), "utf-8").toString("base64") }
         : {}),
     }
-    console.log("headers", headers)
     return headers
   }
 
