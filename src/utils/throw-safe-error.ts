@@ -11,8 +11,7 @@
 export const throwSafeError = (message: string, error: unknown): never => {
   if (error instanceof Error) {
     throw new Error(`${message}: ${error.message}`)
-  } else {
-    // Error might not be an instance of Error, handle accordingly
-    throw new Error(`${message}: an unexpected error type`)
   }
+  // Error might not be an instance of Error, handle accordingly
+  throw new Error(`${message}: an unexpected error type`)
 }

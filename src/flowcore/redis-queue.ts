@@ -15,9 +15,7 @@ export type RedisPredicate = (
   delay?: number | ((count: number) => number),
 ) => Promise<void>
 
-export function redisPredicateFactory(
-  options: RedisPredicateOptions,
-): RedisPredicate {
+export function redisPredicateFactory(options: RedisPredicateOptions): RedisPredicate {
   const redis = new Redis(options.redisUrl)
   return async (eventId?: string | string[], times = 20, delay = 250) => {
     if (!eventId || eventId.length === 0) {
@@ -26,9 +24,7 @@ export function redisPredicateFactory(
     const eventIds: string[] = Array.isArray(eventId) ? eventId : [eventId]
     return waitForPredicate(
       async () => {
-        const loaded = await Promise.all(
-          eventIds.map((id) => redis?.get(`${options.redisEventIdKey}:${id}`)),
-        )
+        const loaded = await Promise.all(eventIds.map((id) => redis?.get(`${options.redisEventIdKey}:${id}`)))
 
         return loaded.every((result) => !!result)
       },
@@ -39,9 +35,7 @@ export function redisPredicateFactory(
   }
 }
 
-export function redisQueueWriterFactory(
-  options: RedisPredicateOptions,
-): RedisQueueWriter {
+export function redisQueueWriterFactory(options: RedisPredicateOptions): RedisQueueWriter {
   const redis = new Redis(options.redisUrl)
   return async (eventId: string) => {
     await redis.set(`${options.redisEventIdKey}:${eventId}`, "1", "EX", "60")
