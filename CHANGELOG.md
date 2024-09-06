@@ -1,5 +1,25 @@
 # Changelog
 
+## [2.0.0](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v1.10.1...v2.0.0) (2024-09-06)
+
+
+### ⚠ BREAKING CHANGES
+
+* update readme
+
+### Features
+
+* add transformer builder ([3caedb4](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/3caedb4b7b1aba852eb8cc8adc737c0462f5b723))
+* add webhook builder + linting ([1b2b53f](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/1b2b53f87e9ae93fb687856dfc37edd68326e566))
+* update readme ([2c4f391](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/2c4f391cde7f86382effcec7d8e16764c76870e0))
+
+
+### Bug Fixes
+
+* add missing export ([f180258](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/f1802588e46c6b06b21e6b7a247c7796c18f03a2))
+* lint ([5bf5db3](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/5bf5db3c745ca48e9dc76b9acb4eac5c7ee26814))
+* remove console log ([9613f87](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/9613f87377bc62b05a586b1f29588fb2dfdc7b4f))
+
 ## [1.10.1](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v1.10.0...v1.10.1) (2024-09-03)
 
 
