@@ -50,9 +50,9 @@ export type TransformerEventHandler<T> = (event: Static<typeof FlowcoreEventSche
 export type TransformerSuccessHandler = (
   event: Static<typeof FlowcoreEventSchema>,
   response: Static<typeof TransformerResponseSchema>,
-) => Promise<void>
+) => Promise<unknown>
 
 export type TransformerErrorHandler = (
   event: Static<typeof FlowcoreEventSchema>,
   response: Static<typeof TransformerResponseSchema>,
-) => Promise<void>
+) => Promise<unknown>
