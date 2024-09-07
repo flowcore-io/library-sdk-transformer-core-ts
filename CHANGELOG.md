@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.0.1](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v2.0.0...v2.0.1) (2024-09-07)
+
+
+### Bug Fixes
+
+* fix signature of transformer handler methods ([4efbaa7](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/4efbaa71b3a9e81f47daea88562df3fc491f48c2))
+* reverse arguments on transformer handler ([29d37b2](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/29d37b232692d7eef591a3c193221ba4c23d48af))
+
 ## [2.0.0](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v1.10.1...v2.0.0) (2024-09-06)
 
 
