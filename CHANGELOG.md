@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.0.2](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v2.0.1...v2.0.2) (2024-09-08)
+
+
+### Bug Fixes
+
+* add local transform ([1918f39](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/1918f39b1a8eb5185e526909e2c98b575b9a6a5c))
+* add secret option to local transformer ([debdd44](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/debdd44b64e7a3d06f1a4219cd8b18882bba12e6))
+
 ## [2.0.1](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v2.0.0...v2.0.1) (2024-09-07)
 
 
