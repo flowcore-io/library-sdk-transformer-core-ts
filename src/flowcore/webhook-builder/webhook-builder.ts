@@ -62,6 +62,7 @@ export class WebhookBuilder {
   public withLocalTransform(options: WebhookLocalTransformOptions) {
     this.localTransformOptions = {
       baseUrl: options.baseUrl,
+      secret: options.secret,
     }
     return this
   }
@@ -167,20 +168,19 @@ export class WebhookBuilder {
       eventId: eventId ?? "00000000-0000-0000-0000-000000000000",
       validTime: new Date().toISOString(),
     }
-    console.log("Send to local transformer", event)
     try {
       const response = await fetch(url, {
         method: "POST",
-        headers: this.getHeaders({}, { contentType: "application/json" }),
+        headers: {
+          "X-Secret": this.localTransformOptions.secret ?? "",
+        },
         body: JSON.stringify(event),
       })
       if (!response.ok) {
         const responseBody = await response.json()
-        console.error(responseBody)
         throw new WebhookLocalTransformerError("Failed to send event to local transformer", { response: responseBody })
       }
     } catch (error) {
-      console.error(error)
       throw new WebhookLocalTransformerError("Failed to send event to local transformer", { exception: error })
     }
   }
