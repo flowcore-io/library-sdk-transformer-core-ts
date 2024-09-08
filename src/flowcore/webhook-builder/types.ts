@@ -46,7 +46,7 @@ export interface WebhookRetryOptions {
 }
 
 export interface WebhookLocalTransformOptions {
-  baseUrl: string
+  baseUrl?: string
 }
 
 export interface WebhookSendOptions {

@@ -5,7 +5,7 @@ export const FlowcoreEventSchema = Type.Object(
     eventId: Type.String(),
     aggregator: Type.String(),
     eventType: Type.String(),
-    validTime: Type.String({ format: "date-time" }),
+    validTime: Type.String({ pattern: "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,3})?Z$" }),
     payload: Type.Unknown(),
   },
   {
