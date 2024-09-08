@@ -1,6 +1,7 @@
 import type { Static, TAnySchema } from "@sinclair/typebox"
 import { Value } from "@sinclair/typebox/value"
-import { WebhookPredicateError, WebhookSendError } from "./exceptions"
+import type { FlowcoreEventSchema } from "../transformer-builder"
+import { WebhookLocalTransformerError, WebhookPredicateError, WebhookSendError } from "./exceptions"
 import {
   RETRYABLE_STATUS_CODES,
   WebhookBatchSuccessResponseSchema,
@@ -59,7 +60,10 @@ export class WebhookBuilder {
   }
 
   public withLocalTransform(options: WebhookLocalTransformOptions) {
-    this.localTransformOptions = options
+    this.localTransformOptions = {
+      baseUrl: options.baseUrl,
+      secret: options.secret,
+    }
     return this
   }
 
@@ -99,9 +103,7 @@ export class WebhookBuilder {
       })
       const response = this.validateWebhookResponse(rawResponse, WebhookSuccessResponseSchema)
       const eventId = response.eventId
-      if (this.localTransformOptions) {
-        // TODO: Do local Transformation
-      }
+      await this.doLocalTransform(flowType, eventType, payload, eventId)
       await this.doPredicateCheck(eventId)
       return eventId
     }
@@ -117,10 +119,12 @@ export class WebhookBuilder {
       if (eventIds.length !== payload.length) {
         throw new WebhookSendError("Webhook batch returned different number of event ids than payloads", { response })
       }
+      await Promise.all(
+        payload.map((payload, index) => this.doLocalTransform(flowType, eventType, payload, eventIds[index])),
+      )
       await this.doPredicateCheck(eventIds)
       return eventIds
     }
-
     return { send, sendBatch }
   }
 
@@ -150,6 +154,35 @@ export class WebhookBuilder {
     }
 
     return { send }
+  }
+
+  private async doLocalTransform(flowType: string, eventType: string, payload: unknown, eventId?: string) {
+    if (!this.localTransformOptions?.baseUrl) {
+      return
+    }
+    const url = `${this.localTransformOptions.baseUrl}/${flowType}`
+    const event: Static<typeof FlowcoreEventSchema> = {
+      aggregator: flowType,
+      eventType,
+      payload,
+      eventId: eventId ?? "00000000-0000-0000-0000-000000000000",
+      validTime: new Date().toISOString(),
+    }
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "X-Secret": this.localTransformOptions.secret ?? "",
+        },
+        body: JSON.stringify(event),
+      })
+      if (!response.ok) {
+        const responseBody = await response.json()
+        throw new WebhookLocalTransformerError("Failed to send event to local transformer", { response: responseBody })
+      }
+    } catch (error) {
+      throw new WebhookLocalTransformerError("Failed to send event to local transformer", { exception: error })
+    }
   }
 
   private validateWebhookResponse<T extends TAnySchema>(response: unknown, responseSchema: T): Static<T> {
