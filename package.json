@@ -2,7 +2,7 @@
   "name": "@flowcore/sdk-transformer-core",
   "description": "A core library that facilitates writing transformers and business logic services that utilise the flowcore paradigm",
   "license": "MIT",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "type": "commonjs",
   "publishConfig": {
     "access": "public",
@@ -12,10 +12,17 @@
     "url": "https://github.com/flowcore-io/library-sdk-transformer-core-ts.git",
     "type": "git"
   },
-  "keywords": ["flowcore", "typescript"],
+  "keywords": [
+    "flowcore",
+    "typescript"
+  ],
   "main": "dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist", "README.md", "LICENSE.txt"],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE.txt"
+  ],
   "scripts": {
     "build:watch": "chokidar 'src/**/*.ts' -c 'yarn build'",
     "prebuild": "rimraf dist",

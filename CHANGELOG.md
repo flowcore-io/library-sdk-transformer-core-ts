@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.0.3](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v2.0.2...v2.0.3) (2024-09-10)
+
+
+### Bug Fixes
+
+* add dependency override for typebox ([ae4eb8d](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/ae4eb8d57ce8b8bd5e25ed06498d4af7692965b6))
+* update lock file ([17bfb1d](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/17bfb1d0f61e5cc9b1497e58c98c8cabd0cb2a9f))
+
 ## [2.0.2](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v2.0.1...v2.0.2) (2024-09-08)
 
 
