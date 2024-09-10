@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.6](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v2.0.5...v2.0.6) (2024-09-10)
+
+
+### Bug Fixes
+
+* added output types for buildWebhook and buildFilehook ([3581cd7](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/3581cd7fda6e1d9b3dc929b997df93619e47e3d5))
+
 ## [2.0.5](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v2.0.4...v2.0.5) (2024-09-10)
 
 
