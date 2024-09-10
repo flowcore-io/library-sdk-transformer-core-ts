@@ -73,3 +73,12 @@ export interface WebhookFileData {
 }
 
 export type WebhookPredicate = (eventId: string) => Promise<boolean> | boolean
+
+export type Webhook<EventPayload, EventMetadata extends Record<string, unknown>> = {
+  send: (payload: EventPayload, metadata?: EventMetadata, options?: WebhookSendOptions) => Promise<string>
+  sendBatch: (payload: EventPayload[], metadata?: EventMetadata, options?: WebhookSendBatchOptions) => Promise<string[]>
+}
+
+export type WebhookFile<EventMetadata extends Record<string, unknown>> = {
+  send: (payload: WebhookFileData, metadata?: EventMetadata, options?: WebhookSendOptions) => Promise<string[]>
+}

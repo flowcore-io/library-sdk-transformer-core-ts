@@ -4,10 +4,12 @@ import type { FlowcoreEventSchema } from "../transformer-builder"
 import { WebhookLocalTransformerError, WebhookPredicateError, WebhookSendError } from "./exceptions"
 import {
   RETRYABLE_STATUS_CODES,
+  type Webhook,
   WebhookBatchSuccessResponseSchema,
   type WebhookBuilderOptions,
   WebhookError500ResponseSchema,
   WebhookErrorResponseSchema,
+  type WebhookFile,
   type WebhookFileData,
   WebhookFileSuccessResponseSchema,
   type WebhookHeaderOptions,
@@ -94,7 +96,7 @@ export class WebhookBuilder {
   public buildWebhook<EventPayload, EventMetadata extends Record<string, unknown> = Record<string, unknown>>(
     flowType: string,
     eventType: string,
-  ) {
+  ): Webhook<EventPayload, EventMetadata> {
     const send = async (payload: EventPayload, metadata?: EventMetadata, options?: WebhookSendOptions) => {
       const rawResponse = await this.fetchWithRetry(this.getUrl(flowType, eventType, "event"), {
         method: "POST",
@@ -131,7 +133,7 @@ export class WebhookBuilder {
   public buildFileWebhook<EventMetadata extends Record<string, unknown> = Record<string, unknown>>(
     flowType: string,
     eventType: string,
-  ) {
+  ): WebhookFile<EventMetadata> {
     const send = async (payload: WebhookFileData, metadata?: EventMetadata, options?: WebhookSendOptions) => {
       const formData = new FormData()
       formData.append("fileId", payload.fileId)
