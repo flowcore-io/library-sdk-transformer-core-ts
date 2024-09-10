@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.0.4](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v2.0.3...v2.0.4) (2024-09-10)
+
+
+### Bug Fixes
+
+* change return of safeParseType ([969ed48](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/969ed48af898366a05bc958bf6278ad139f23b68))
+* downgrade typebox to same version as in elysia ([634f6c8](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/634f6c8f921cd8cc47c8e0b9919790f15aade96d))
+
 ## [2.0.3](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v2.0.2...v2.0.3) (2024-09-10)
 
 
