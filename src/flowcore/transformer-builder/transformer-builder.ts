@@ -1,6 +1,6 @@
 import type { Static, TObject, TProperties } from "@sinclair/typebox"
 import { Value } from "@sinclair/typebox/value"
-import { safeParseType } from "src/utils/safe-parse-type"
+import { safeParseType } from "./../../utils/safe-parse-type"
 import { TransformerError } from "./exceptions"
 import {
   FlowcoreEventSchema,
