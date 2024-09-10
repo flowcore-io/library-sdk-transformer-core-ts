@@ -1,5 +1,6 @@
-import { type Static, type TObject, type TProperties, TypeBoxError } from "@sinclair/typebox"
+import type { Static, TObject, TProperties } from "@sinclair/typebox"
 import { Value } from "@sinclair/typebox/value"
+import { safeParseType } from "src/utils/safe-parse-type"
 import { TransformerError } from "./exceptions"
 import {
   FlowcoreEventSchema,
@@ -96,22 +97,22 @@ export class TransformerBuilder {
       }
     }
 
-    let parsedPayload: Static<typeof eventConsumer.schema>
-    try {
-      parsedPayload = Value.Parse(eventConsumer.schema, event.payload)
-    } catch (error) {
-      const errors: Record<string, string> = {}
-      if (error instanceof TypeBoxError) {
-        const typeboxErrors = Value.Errors(eventConsumer.schema, event.payload)
-        for (const typeboxError of typeboxErrors) {
-          errors[typeboxError.path] = typeboxError.message
-        }
-      }
+    const payload = event.payload
+    if (!Value.Check(eventConsumer.schema, payload)) {
       return {
         status: "error",
         message: "Invalid payload",
         statusCode: 400,
-        errors: errors,
+      }
+    }
+
+    const parsedPayload = safeParseType(eventConsumer.schema, event.payload)
+    if (!parsedPayload.success) {
+      return {
+        status: "error",
+        message: "Invalid payload",
+        statusCode: 400,
+        errors: parsedPayload.errors,
       }
     }
 
