@@ -117,7 +117,7 @@ export class TransformerBuilder {
     }
 
     try {
-      await eventConsumer.handler(parsedPayload, event)
+      await eventConsumer.handler(parsedPayload.data, event)
     } catch (error) {
       throw new TransformerError("Failed to handle event", {
         exception: error as Error,

@@ -3,7 +3,7 @@ import { Value } from "@sinclair/typebox/value"
 
 export interface SafeParseTypeSuccess<T extends TProperties> {
   success: true
-  value: Static<TObject<T>>
+  data: Static<TObject<T>>
 }
 
 export interface SafeParseTypeError {
@@ -29,6 +29,6 @@ export function safeParseType<T extends TProperties>(schema: TObject<T>, value: 
   }
   return {
     success: true,
-    value: parsedValue as Static<typeof schema>,
+    data: parsedValue as Static<typeof schema>,
   }
 }
