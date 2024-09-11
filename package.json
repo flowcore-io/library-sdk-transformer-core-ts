@@ -65,7 +65,6 @@
   },
   "dependencies": {
     "@sinclair/typebox": "^0.32.15",
-    "ioredis": "5.4.1",
     "radash": "12.1.0"
   },
   "peerDependencies": {},
