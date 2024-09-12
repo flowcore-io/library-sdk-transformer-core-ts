@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.2.0](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v2.1.1...v2.2.0) (2024-09-12)
+
+
+### Features
+
+* **transformer-builder:** :sparkles: added metadata to flowcore event schema ([3854b78](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/3854b785bcf063fd6ca07359a2be4cffb43635ce))
+
+
+### Bug Fixes
+
+* **transformer-builder:** :bug: set context to be required internally within process event and create empty object of nothing exists in context ([122d155](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/122d1557a56e55db01241659526b05993d613f8b))
+
 ## [2.1.1](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v2.1.0...v2.1.1) (2024-09-12)
 
 
