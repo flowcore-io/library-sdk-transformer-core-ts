@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.1.0](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v2.0.6...v2.1.0) (2024-09-12)
+
+
+### Features
+
+* added default parameter to webhook type ([c43357e](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/c43357ea730b238982ab43ad175a98ded8728ab3))
+* **transformer-builder:** :sparkles: added a context that can be passed to event handler ([f90aa19](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/f90aa19cc4a9b4c43535d345af509924cc01bac6))
+
 ## [2.0.6](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v2.0.5...v2.0.6) (2024-09-10)
 
 
