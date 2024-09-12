@@ -53,7 +53,7 @@ export class TransformerBuilder<TContext = unknown> {
   }
 
   public getHandler() {
-    return (event: unknown, secret?: string) => {
+    return (event: unknown, secret?: string, context?: TContext) => {
       if (!Value.Check(FlowcoreEventSchema, event)) {
         const errors: Record<string, string> = {}
         const typeboxErrors = Value.Errors(FlowcoreEventSchema, event)
@@ -62,7 +62,7 @@ export class TransformerBuilder<TContext = unknown> {
         }
         throw new TransformerError("Invalid event", { errors })
       }
-      return this.handleEvent(event, secret)
+      return this.handleEvent(event, secret, context)
     }
   }
 
