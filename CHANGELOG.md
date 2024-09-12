@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.2](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v2.2.1...v2.2.2) (2024-09-12)
+
+
+### Bug Fixes
+
+* **transformer-builder:** :bug: get handler now passed on the context to handle event ([4e7d01f](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/4e7d01f182bf6556af980d9753d36dfe9997ad76))
+
 ## [2.2.1](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v2.2.0...v2.2.1) (2024-09-12)
 
 
