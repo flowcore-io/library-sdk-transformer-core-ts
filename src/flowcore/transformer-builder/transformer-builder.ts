@@ -53,7 +53,7 @@ export class TransformerBuilder<TContext = unknown> {
   }
 
   public getHandler() {
-    return (event: unknown, secret?: string) => {
+    return (event: unknown, context: TContext, secret?: string) => {
       if (!Value.Check(FlowcoreEventSchema, event)) {
         const errors: Record<string, string> = {}
         const typeboxErrors = Value.Errors(FlowcoreEventSchema, event)
@@ -62,12 +62,12 @@ export class TransformerBuilder<TContext = unknown> {
         }
         throw new TransformerError("Invalid event", { errors })
       }
-      return this.handleEvent(event, secret)
+      return this.handleEvent(event, context, secret)
     }
   }
 
-  protected async handleEvent(event: Static<typeof FlowcoreEventSchema>, secret?: string, context?: TContext) {
-    const response = await this.processEvent(event, context ?? ({} as TContext), secret)
+  protected async handleEvent(event: Static<typeof FlowcoreEventSchema>, context: TContext, secret?: string) {
+    const response = await this.processEvent(event, context, secret)
     this.processResponse(event, response).catch((error) => {
       throw new TransformerError("Failed to run after response handler", {
         exception: error as Error,
