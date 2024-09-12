@@ -7,6 +7,7 @@ export const FlowcoreEventSchema = Type.Object(
     eventType: Type.String(),
     validTime: Type.String({ pattern: "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,3})?Z$" }),
     payload: Type.Unknown(),
+    metadata: Type.Optional(Type.Record(Type.String(), Type.String())),
   },
   {
     $id: "FlowcoreEvent",
