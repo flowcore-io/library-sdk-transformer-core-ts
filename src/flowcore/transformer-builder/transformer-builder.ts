@@ -43,7 +43,7 @@ export class TransformerBuilder<TContext = unknown> {
   public onEventType<T extends TProperties>(
     eventType: string,
     schema: TObject<T>,
-    handler: TransformerEventHandler<Static<typeof schema>>,
+    handler: TransformerEventHandler<Static<typeof schema>, TContext>,
   ): this {
     if (!eventType) {
       throw new TransformerError("Event type is required to construct a transformer")
