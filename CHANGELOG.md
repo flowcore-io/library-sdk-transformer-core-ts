@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.1](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v2.2.0...v2.2.1) (2024-09-12)
+
+
+### Bug Fixes
+
+* **transformer-builder:** :technologist: made context mandatory ([0f47976](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/0f47976b19517284001c0d4cc20edaeb3b3bb8da))
+
 ## [2.2.0](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v2.1.1...v2.2.0) (2024-09-12)
 
 
