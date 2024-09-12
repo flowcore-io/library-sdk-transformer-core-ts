@@ -48,7 +48,7 @@ export const TransformerResponseSchema = Type.Union(
 export type TransformerEventHandler<T, TContext> = (
   payload: T,
   event: Static<typeof FlowcoreEventSchema>,
-  context?: TContext,
+  context: TContext,
 ) => Promise<void>
 
 export type TransformerSuccessHandler = (

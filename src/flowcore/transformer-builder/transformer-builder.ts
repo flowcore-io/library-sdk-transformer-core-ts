@@ -67,7 +67,7 @@ export class TransformerBuilder<TContext = unknown> {
   }
 
   protected async handleEvent(event: Static<typeof FlowcoreEventSchema>, secret?: string, context?: TContext) {
-    const response = await this.processEvent(event, secret, context)
+    const response = await this.processEvent(event, context ?? ({} as TContext), secret)
     this.processResponse(event, response).catch((error) => {
       throw new TransformerError("Failed to run after response handler", {
         exception: error as Error,
@@ -78,8 +78,8 @@ export class TransformerBuilder<TContext = unknown> {
 
   private async processEvent(
     event: Static<typeof FlowcoreEventSchema>,
+    context: TContext,
     secret?: string,
-    context?: TContext,
   ): Promise<Static<typeof TransformerResponseSchema>> {
     if (this.secret && this.secret !== secret) {
       return { status: "error", statusCode: 401, message: "Unauthorized" }
