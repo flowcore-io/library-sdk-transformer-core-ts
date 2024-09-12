@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.1](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v2.1.0...v2.1.1) (2024-09-12)
+
+
+### Bug Fixes
+
+* **transformer-builder:** :bug: added context type to `onEventType` method ([9c99004](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/9c9900426faa6a10304815703280d02cbff966cd))
+
 ## [2.1.0](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v2.0.6...v2.1.0) (2024-09-12)
 
 
