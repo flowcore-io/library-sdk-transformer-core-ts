@@ -10,13 +10,13 @@ import {
   type TransformerSuccessHandler,
 } from "./types"
 
-export class TransformerBuilder {
+export class TransformerBuilder<TContext = unknown> {
   protected secret?: string
   protected flowType: string
   private successHandler?: TransformerSuccessHandler
   private errorHandler?: TransformerErrorHandler
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-  private eventTypes: Record<string, { handler: TransformerEventHandler<any>; schema: TObject }> = {}
+  private eventTypes: Record<string, { handler: TransformerEventHandler<any, TContext>; schema: TObject }> = {}
 
   public constructor(flowType: string) {
     if (!flowType) {
@@ -66,8 +66,8 @@ export class TransformerBuilder {
     }
   }
 
-  protected async handleEvent(event: Static<typeof FlowcoreEventSchema>, secret?: string) {
-    const response = await this.processEvent(event, secret)
+  protected async handleEvent(event: Static<typeof FlowcoreEventSchema>, secret?: string, context?: TContext) {
+    const response = await this.processEvent(event, secret, context)
     this.processResponse(event, response).catch((error) => {
       throw new TransformerError("Failed to run after response handler", {
         exception: error as Error,
@@ -79,6 +79,7 @@ export class TransformerBuilder {
   private async processEvent(
     event: Static<typeof FlowcoreEventSchema>,
     secret?: string,
+    context?: TContext,
   ): Promise<Static<typeof TransformerResponseSchema>> {
     if (this.secret && this.secret !== secret) {
       return { status: "error", statusCode: 401, message: "Unauthorized" }
@@ -117,7 +118,7 @@ export class TransformerBuilder {
     }
 
     try {
-      await eventConsumer.handler(parsedPayload.data, event)
+      await eventConsumer.handler(parsedPayload.data, event, context)
     } catch (error) {
       throw new TransformerError("Failed to handle event", {
         exception: error as Error,
