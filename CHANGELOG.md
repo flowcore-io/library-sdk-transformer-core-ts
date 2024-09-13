@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.3](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v2.2.2...v2.2.3) (2024-09-13)
+
+
+### Bug Fixes
+
+* upgrade typescript ([9e78a26](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/9e78a2691922edef74904aff3126fea5806f3074))
+
 ## [2.2.2](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v2.2.1...v2.2.2) (2024-09-12)
 
 
