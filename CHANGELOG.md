@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.0](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v2.2.3...v2.3.0) (2024-09-23)
+
+
+### Features
+
+* allow multiple transformers on same event type ([91ae11b](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/91ae11baf0b9be1554156728300d170162a4559a))
+
 ## [2.2.3](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v2.2.2...v2.2.3) (2024-09-13)
 
 
