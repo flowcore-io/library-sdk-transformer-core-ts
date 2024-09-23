@@ -16,7 +16,7 @@ export class TransformerBuilder<TContext = unknown> {
   private successHandler?: TransformerSuccessHandler
   private errorHandler?: TransformerErrorHandler
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-  private eventTypes: Record<string, { handler: TransformerEventHandler<any, TContext>; schema: TObject }> = {}
+  private eventTypes: Record<string, { handlers: TransformerEventHandler<any, TContext>[]; schema: TObject }> = {}
 
   public constructor(flowType: string) {
     if (!flowType) {
@@ -48,7 +48,10 @@ export class TransformerBuilder<TContext = unknown> {
     if (!eventType) {
       throw new TransformerError("Event type is required to construct a transformer")
     }
-    this.eventTypes[eventType] = { handler, schema }
+    if (!this.eventTypes[eventType]) {
+      this.eventTypes[eventType] = { handlers: [], schema }
+    }
+    this.eventTypes[eventType].handlers.push(handler)
     return this
   }
 
@@ -90,7 +93,7 @@ export class TransformerBuilder<TContext = unknown> {
     }
 
     const eventConsumer = this.eventTypes[event.eventType]
-    if (!eventConsumer) {
+    if (!eventConsumer || eventConsumer.handlers.length === 0) {
       return {
         status: "error",
         message: "Invalid event type",
@@ -118,7 +121,9 @@ export class TransformerBuilder<TContext = unknown> {
     }
 
     try {
-      await eventConsumer.handler(parsedPayload.data, event, context)
+      for (const handler of eventConsumer.handlers) {
+        await handler(parsedPayload.data, event, context)
+      }
     } catch (error) {
       throw new TransformerError("Failed to handle event", {
         exception: error as Error,
