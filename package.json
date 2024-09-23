@@ -2,7 +2,7 @@
   "name": "@flowcore/sdk-transformer-core",
   "description": "A core library that facilitates writing transformers and business logic services that utilise the flowcore paradigm",
   "license": "MIT",
-  "version": "2.2.3",
+  "version": "2.3.0",
   "type": "commonjs",
   "publishConfig": {
     "access": "public",
