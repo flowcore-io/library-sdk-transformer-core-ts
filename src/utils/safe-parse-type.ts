@@ -14,7 +14,7 @@ export interface SafeParseTypeError {
 export type SafeParseTypeResult<T extends TProperties> = SafeParseTypeSuccess<T> | SafeParseTypeError
 
 export function safeParseType<T extends TProperties>(schema: TObject<T>, value: unknown): SafeParseTypeResult<T> {
-  const parsedValue = Value.Convert(schema, Value.Clean(schema, Value.Default(schema, value)))
+  const parsedValue = Value.Convert(schema, Value.Clean(schema, Value.Default(schema, structuredClone(value))))
   if (!Value.Check(schema, parsedValue)) {
     const typeboxErrors = Value.Errors(schema, parsedValue)
     const errors: Record<string, string> = {}
