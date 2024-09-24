@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.1](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v2.3.0...v2.3.1) (2024-09-24)
+
+
+### Bug Fixes
+
+* clone value in safe parse as to not mutate input ([26024b7](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/26024b72b79cf983d064961424aec700ada85ed9))
+
 ## [2.3.0](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v2.2.3...v2.3.0) (2024-09-23)
 
 
