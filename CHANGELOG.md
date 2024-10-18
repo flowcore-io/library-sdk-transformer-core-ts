@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.2](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v2.3.1...v2.3.2) (2024-10-18)
+
+
+### Bug Fixes
+
+* add content type header when sending to local transformer ([65ce837](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/65ce8374d421d5f523d6fe17314c812895ef2c6a))
+
 ## [2.3.1](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v2.3.0...v2.3.1) (2024-09-24)
 
 
