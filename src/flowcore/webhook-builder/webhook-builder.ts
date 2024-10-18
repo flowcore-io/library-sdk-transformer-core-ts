@@ -175,6 +175,7 @@ export class WebhookBuilder {
         method: "POST",
         headers: {
           "X-Secret": this.localTransformOptions.secret ?? "",
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(event),
       })
