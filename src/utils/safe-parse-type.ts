@@ -21,7 +21,6 @@ export function safeParseType<T extends TProperties>(schema: TObject<T>, value: 
     for (const typeboxError of typeboxErrors) {
       errors[typeboxError.path] = typeboxError.message
     }
-    console.log(parsedValue)
     return {
       success: false,
       errors: errors,
