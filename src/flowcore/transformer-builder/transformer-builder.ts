@@ -101,15 +101,6 @@ export class TransformerBuilder<TContext = unknown> {
       }
     }
 
-    const payload = event.payload
-    if (!Value.Check(eventConsumer.schema, payload)) {
-      return {
-        status: "error",
-        message: "Invalid payload",
-        statusCode: 400,
-      }
-    }
-
     const parsedPayload = safeParseType(eventConsumer.schema, event.payload)
     if (!parsedPayload.success) {
       return {
