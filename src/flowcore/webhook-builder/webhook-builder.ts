@@ -265,10 +265,22 @@ export class WebhookBuilder {
       try {
         const response = await fetch(url, options)
         if (response.ok) {
-          return response.json()
+          return response.json().catch((error) => {
+            return {
+              success: false,
+              message: "Failed to parse response",
+              error: error instanceof Error ? error.message : "Unknown error",
+            }
+          })
         }
         if (!RETRYABLE_STATUS_CODES.includes(response.status) || attempt >= maxAttempts) {
-          return response.json()
+          return response.json().catch((error) => {
+            return {
+              success: false,
+              message: "Failed to parse error response",
+              error: error instanceof Error ? error.message : "Unknown error",
+            }
+          })
         }
         await sleep(attemptDelayMs, attempt)
       } catch (error) {
