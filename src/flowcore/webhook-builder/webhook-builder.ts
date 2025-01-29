@@ -93,7 +93,7 @@ export class WebhookBuilder {
     }
   }
 
-  public buildWebhook<EventPayload, EventMetadata extends Record<string, unknown> = Record<string, unknown>>(
+  public buildWebhook<EventPayload, EventMetadata extends Record<string, string> = Record<string, string>>(
     flowType: string,
     eventType: string,
   ): Webhook<EventPayload, EventMetadata> {
@@ -130,7 +130,7 @@ export class WebhookBuilder {
     return { send, sendBatch }
   }
 
-  public buildFileWebhook<EventMetadata extends Record<string, unknown> = Record<string, unknown>>(
+  public buildFileWebhook<EventMetadata extends Record<string, string> = Record<string, string>>(
     flowType: string,
     eventType: string,
   ): WebhookFile<EventMetadata> {
@@ -297,7 +297,7 @@ export class WebhookBuilder {
     }
   }
 
-  private getHeaders(metadata?: Record<string, unknown>, options?: WebhookHeaderOptions) {
+  private getHeaders(metadata?: Record<string, string>, options?: WebhookHeaderOptions) {
     const headers = {
       Authorization: `${this.apiKey}`,
       ...(options?.contentType ? { "Content-Type": options.contentType } : {}),
