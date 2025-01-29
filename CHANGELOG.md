@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.3.4](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v2.3.3...v2.3.4) (2025-01-29)
+
+
+### Bug Fixes
+
+* add error handling on webhook response ([c56882c](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/c56882cf676264e9339831addfdf1dc264bba828))
+* only allow string, string metadata ([77cd358](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/77cd358c2791d98f0f76aeb4fbc564186cca8d18))
+* **transformer-builder:** :fire: removed rouge console log ([f46a1eb](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/f46a1eb77749eca4c0fc420231a98a4a0bf058f6))
+
 ## [2.3.3](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v2.3.2...v2.3.3) (2024-11-07)
 
 
