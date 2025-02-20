@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.6](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v2.3.5...v2.3.6) (2025-02-20)
+
+
+### Bug Fixes
+
+* remove webhook builder types export ([9dcaf01](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/9dcaf01654c73171800c61b84a509be4ceee40c5))
+
 ## [2.3.5](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v2.3.4...v2.3.5) (2025-02-20)
 
 
