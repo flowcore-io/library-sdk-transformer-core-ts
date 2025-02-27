@@ -158,6 +158,54 @@ export class WebhookBuilder {
     return { send }
   }
 
+  public buildCustomWebhook<EventPayload, EventMetadata extends Record<string, string> = Record<string, string>>(
+    flowType: string,
+    eventType: string,
+    url: string,
+    customHeaders?: () => Promise<Record<string, string>>,
+  ): Webhook<EventPayload, EventMetadata> {
+    const send = async (payload: EventPayload, metadata?: EventMetadata, options?: WebhookSendOptions) => {
+      const headers = {
+        ...(customHeaders ? await customHeaders() : {}),
+        ...this.getHeaders(metadata, { contentType: "application/json", ...options }),
+      }
+
+      const rawResponse = await this.fetchWithRetry(url, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(payload),
+      })
+      const response = this.validateWebhookResponse(rawResponse, WebhookSuccessResponseSchema)
+      const eventId = response.eventId
+      await this.doLocalTransform(flowType, eventType, payload, eventId)
+      await this.doPredicateCheck(eventId)
+      return eventId
+    }
+
+    const sendBatch = async (payload: EventPayload[], metadata?: EventMetadata, options?: WebhookSendBatchOptions) => {
+      const headers = {
+        ...(customHeaders ? await customHeaders() : {}),
+        ...this.getHeaders(metadata, { contentType: "application/json", ...options }),
+      }
+      const rawResponse = await this.fetchWithRetry(url, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(payload),
+      })
+      const response = this.validateWebhookResponse(rawResponse, WebhookBatchSuccessResponseSchema)
+      const eventIds = response.eventIds
+      if (eventIds.length !== payload.length) {
+        throw new WebhookSendError("Webhook batch returned different number of event ids than payloads", { response })
+      }
+      await Promise.all(
+        payload.map((payload, index) => this.doLocalTransform(flowType, eventType, payload, eventIds[index])),
+      )
+      await this.doPredicateCheck(eventIds)
+      return eventIds
+    }
+    return { send, sendBatch }
+  }
+
   private async doLocalTransform(flowType: string, eventType: string, payload: unknown, eventId?: string) {
     if (!this.localTransformOptions?.baseUrl) {
       return
