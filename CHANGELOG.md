@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.7](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v2.3.6...v2.3.7) (2025-05-27)
+
+
+### Bug Fixes
+
+* **webhook-builder:** :art: reorder imports and adjust formData appending ([fca5b96](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/fca5b9626a4fd706ebfa82d4b8c200b95163c6eb))
+
 ## [2.3.6](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v2.3.5...v2.3.6) (2025-02-20)
 
 
