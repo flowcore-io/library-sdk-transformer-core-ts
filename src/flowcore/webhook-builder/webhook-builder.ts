@@ -4,21 +4,21 @@ import type { FlowcoreEventSchema } from "../transformer-builder"
 import { WebhookLocalTransformerError, WebhookPredicateError, WebhookSendError } from "./exceptions"
 import {
   RETRYABLE_STATUS_CODES,
-  type Webhook,
   WebhookBatchSuccessResponseSchema,
-  type WebhookBuilderOptions,
   WebhookError500ResponseSchema,
   WebhookErrorResponseSchema,
+  WebhookFileSuccessResponseSchema,
+  WebhookSuccessResponseSchema,
+  type Webhook,
+  type WebhookBuilderOptions,
   type WebhookFile,
   type WebhookFileData,
-  WebhookFileSuccessResponseSchema,
   type WebhookHeaderOptions,
   type WebhookLocalTransformOptions,
   type WebhookPredicate,
   type WebhookRetryOptions,
   type WebhookSendBatchOptions,
   type WebhookSendOptions,
-  WebhookSuccessResponseSchema,
 } from "./types"
 
 export class WebhookBuilder {
@@ -136,14 +136,14 @@ export class WebhookBuilder {
   ): WebhookFile<EventMetadata> {
     const send = async (payload: WebhookFileData, metadata?: EventMetadata, options?: WebhookSendOptions) => {
       const formData = new FormData()
-      formData.append("fileId", payload.fileId)
-      formData.append("type", payload.fileType)
-      formData.append("file", payload.fileContent, payload.fileName)
       if (metadata) {
         for (const [key, value] of Object.entries(metadata)) {
           formData.append(key, value as string)
         }
       }
+      formData.append("fileId", payload.fileId)
+      formData.append("type", payload.fileType)
+      formData.append("file", payload.fileContent, payload.fileName)
       const rawResponse = await this.fetchWithRetry(this.getUrl(flowType, eventType, "file"), {
         method: "POST",
         headers: this.getHeaders(metadata, options),
