@@ -69,7 +69,7 @@ export interface WebhookFileData {
   fileName: string
   fileType: string
   fileContent: Blob
-  metadata?: Record<string, string>
+  additionalProperties?: Record<string, unknown>
 }
 
 export type WebhookPredicate = (eventId: string) => Promise<boolean> | boolean

@@ -4,21 +4,21 @@ import type { FlowcoreEventSchema } from "../transformer-builder"
 import { WebhookLocalTransformerError, WebhookPredicateError, WebhookSendError } from "./exceptions"
 import {
   RETRYABLE_STATUS_CODES,
+  type Webhook,
   WebhookBatchSuccessResponseSchema,
+  type WebhookBuilderOptions,
   WebhookError500ResponseSchema,
   WebhookErrorResponseSchema,
-  WebhookFileSuccessResponseSchema,
-  WebhookSuccessResponseSchema,
-  type Webhook,
-  type WebhookBuilderOptions,
   type WebhookFile,
   type WebhookFileData,
+  WebhookFileSuccessResponseSchema,
   type WebhookHeaderOptions,
   type WebhookLocalTransformOptions,
   type WebhookPredicate,
   type WebhookRetryOptions,
   type WebhookSendBatchOptions,
   type WebhookSendOptions,
+  WebhookSuccessResponseSchema,
 } from "./types"
 
 export class WebhookBuilder {
@@ -137,7 +137,7 @@ export class WebhookBuilder {
     const send = async (payload: WebhookFileData, metadata?: EventMetadata, options?: WebhookSendOptions) => {
       const formData = new FormData()
       if (metadata) {
-        for (const [key, value] of Object.entries(metadata)) {
+        for (const [key, value] of Object.entries(payload.additionalProperties ?? {})) {
           formData.append(key, value as string)
         }
       }
