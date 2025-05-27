@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.4.0](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v2.3.7...v2.4.0) (2025-05-27)
+
+
+### Features
+
+* change filehook ([a966ed4](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/a966ed49f60d8a844b695467cb608f96ebe0de5b))
+
 ## [2.3.7](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v2.3.6...v2.3.7) (2025-05-27)
 
 
