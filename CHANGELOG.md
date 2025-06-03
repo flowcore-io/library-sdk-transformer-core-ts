@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.5.0](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v2.4.0...v2.5.0) (2025-06-03)
+
+
+### Features
+
+* additional properties ([487292d](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/487292db69d87710d1ade5d6305ffdafc111cbf9))
+
+
+### Bug Fixes
+
+* change build ([d489e24](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/d489e243fe25253393c16d974b697c8b0fe8d582))
+
 ## [2.4.0](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v2.3.7...v2.4.0) (2025-05-27)
 
 
