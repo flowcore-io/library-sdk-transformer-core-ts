@@ -136,11 +136,10 @@ export class WebhookBuilder {
   ): WebhookFile<EventMetadata> {
     const send = async (payload: WebhookFileData, metadata?: EventMetadata, options?: WebhookSendOptions) => {
       const formData = new FormData()
-      if (metadata) {
-        for (const [key, value] of Object.entries(payload.additionalProperties ?? {})) {
-          formData.append(key, value as string)
-        }
-      }
+      // for (const [key, value] of Object.entries(payload.additionalProperties ?? {})) {
+      //   formData.append(key, value as string)
+      // }
+      formData.append("additionalProperties", JSON.stringify(payload.additionalProperties ?? "{}"))
       formData.append("fileId", payload.fileId)
       formData.append("type", payload.fileType)
       formData.append("file", payload.fileContent, payload.fileName)
