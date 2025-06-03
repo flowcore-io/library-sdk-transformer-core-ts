@@ -139,6 +139,7 @@ export class WebhookBuilder {
       // for (const [key, value] of Object.entries(payload.additionalProperties ?? {})) {
       //   formData.append(key, value as string)
       // }
+      process.env.DEBUG?.includes("transformer-core") && console.log("additionalProperties", payload.additionalProperties)
       formData.append("additionalProperties", JSON.stringify(payload.additionalProperties ?? "{}"))
       formData.append("fileId", payload.fileId)
       formData.append("type", payload.fileType)
