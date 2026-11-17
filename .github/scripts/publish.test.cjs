@@ -326,3 +326,36 @@ test("source, dispatch and integrity mutations defeat the relevant negative cont
     }
   }
 })
+
+const supportedPackFiles = [
+  "package.json",
+  "README.md",
+  "LICENSE.txt",
+  "dist/index.js",
+  "dist/index.d.ts",
+  "dist/flowcore/webhook-builder/cancellation.js",
+  "dist/tsconfig.build.tsbuildinfo",
+  "dist/tsconfig.tsbuildinfo",
+]
+test("pack inventory permits exact existing TypeScript build receipts", () => {
+  const r = cli({ action: "pack-files", files: supportedPackFiles })
+  assert.equal(r.status, 0, r.stderr)
+  assert.equal(JSON.parse(r.stdout).publishInvocations, 0)
+})
+for (const path of ["dist/other.tsbuildinfo", "dist/.env", "dist/../secret.json", "src/index.ts", "/dist/index.js"]) {
+  test(`pack inventory still rejects unexpected ${path}`, () => {
+    const r = cli({ action: "pack-files", files: [...supportedPackFiles, path] })
+    assert.equal(r.status, 1)
+    assert.match(r.stderr, /PACK_FILES/)
+  })
+}
+test("pack inventory still requires executable and declaration entrypoints", () => {
+  for (const required of [
+    "dist/index.js",
+    "dist/index.d.ts",
+    "dist/flowcore/webhook-builder/cancellation.js",
+    "README.md",
+    "LICENSE.txt",
+  ])
+    assert.equal(cli({ action: "pack-files", files: supportedPackFiles.filter((p) => p !== required) }).status, 1)
+})
