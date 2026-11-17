@@ -179,6 +179,25 @@ function newer(a, b) {
   }
   return false
 }
+function packFilesGuard(files) {
+  check(
+    Array.isArray(files) &&
+      files.every((p) => typeof p === "string") &&
+      files.includes("dist/index.js") &&
+      files.includes("dist/index.d.ts") &&
+      files.includes("dist/flowcore/webhook-builder/cancellation.js") &&
+      files.includes("README.md") &&
+      files.includes("LICENSE.txt") &&
+      files.every(
+        (p) =>
+          (/^(package\.json|README\.md|LICENSE\.txt|dist\/[A-Za-z0-9_./-]+\.(?:js|d\.ts|json))$/.test(p) ||
+            ["dist/tsconfig.build.tsbuildinfo", "dist/tsconfig.tsbuildinfo"].includes(p)) &&
+          !p.split("/").includes(".."),
+      ),
+    "PACK_FILES",
+  )
+  return "qualified"
+}
 function registryGuard(x) {
   check(
     x.package.status === 200 &&
@@ -335,6 +354,7 @@ async function main() {
     if (x.action === "release") result = releaseGuard(x)
     else if (x.action === "peel") result = peel(x.objects)
     else if (x.action === "registry") result = registryGuard(x)
+    else if (x.action === "pack-files") result = packFilesGuard(x.files)
     else if (x.action === "proof") {
       proofGuard(x.receipt, x.actual)
       result = "qualified"
@@ -397,19 +417,7 @@ async function main() {
       "PACK_NAME",
     )
     const files = packed[0].files.map((f) => f.path)
-    check(
-      files.includes("dist/index.js") &&
-        files.includes("dist/index.d.ts") &&
-        files.includes("dist/flowcore/webhook-builder/cancellation.js") &&
-        files.includes("README.md") &&
-        files.includes("LICENSE.txt") &&
-        files.every(
-          (p) =>
-            /^(package\.json|README\.md|LICENSE\.txt|dist\/[A-Za-z0-9_./-]+\.(?:js|d\.ts|json))$/.test(p) &&
-            !p.split("/").includes(".."),
-        ),
-      "PACK_FILES",
-    )
+    packFilesGuard(files)
     const built = resolve(work, packed[0].filename)
     const manifest = JSON.parse(run("tar", ["-xOf", built, "package/package.json"]))
     check(
