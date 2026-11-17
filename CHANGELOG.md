@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.6.1](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v2.6.0...v2.6.1) (2026-11-17)
+
+
+### Bug Fixes
+
+* **ci:** guard npm recovery with installed tarball proof ([#72](https://github.com/flowcore-io/library-sdk-transformer-core-ts/issues/72)) ([67dd28a](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/67dd28a55b5a7058e8a17e5560b20ffb40a008f1))
+* **release:** allow exact compiler build metadata in pack ([#74](https://github.com/flowcore-io/library-sdk-transformer-core-ts/issues/74)) ([f3ab4ae](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/f3ab4aeaa290e0339de277c3c629fd1cf8a4d5aa))
+
 ## [2.6.0](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v2.5.1...v2.6.0) (2026-11-17)
 
 
