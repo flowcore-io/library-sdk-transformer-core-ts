@@ -9,6 +9,7 @@ env:
 
 jobs:
   test:
+    if: ${{ !startsWith(github.head_ref, 'release-please--') && !startsWith(github.ref, 'refs/heads/release-please--') }}
     runs-on: blacksmith-4vcpu-ubuntu-2204
 
     steps:
@@ -27,3 +28,10 @@ jobs:
         run: yarn lint
       - name: Validate build
         run: yarn build
+
+      - name: Public package types
+        run: yarn test:types
+      - name: Public package boundary tests
+        run: yarn test --runInBand
+      - name: Check formatting
+        run: yarn biome format .
