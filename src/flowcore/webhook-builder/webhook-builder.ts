@@ -1,6 +1,7 @@
 import type { Static, TAnySchema } from "@sinclair/typebox"
 import { Value } from "@sinclair/typebox/value"
 import type { FlowcoreEventSchema } from "../transformer-builder"
+import { checkAbort, drain, sleep, withSignal } from "./cancellation"
 import { WebhookLocalTransformerError, WebhookPredicateError, WebhookSendError } from "./exceptions"
 import {
   RETRYABLE_STATUS_CODES,
@@ -97,36 +98,51 @@ export class WebhookBuilder {
     flowType: string,
     eventType: string,
   ): Webhook<EventPayload, EventMetadata> {
-    const send = async (payload: EventPayload, metadata?: EventMetadata, options?: WebhookSendOptions) => {
-      const rawResponse = await this.fetchWithRetry(this.getUrl(flowType, eventType, "event"), {
-        method: "POST",
-        headers: this.getHeaders(metadata, { contentType: "application/json", ...options }),
-        body: JSON.stringify(payload),
+    const send = async (payload: EventPayload, metadata?: EventMetadata, options?: WebhookSendOptions) =>
+      withSignal(options?.signal, async (signal) => {
+        checkAbort(signal)
+        const { signal: _signal, ...headerOptions } = options ?? {}
+        const rawResponse = await this.fetchWithRetry(this.getUrl(flowType, eventType, "event"), {
+          method: "POST",
+          signal,
+          headers: this.getHeaders(metadata, { contentType: "application/json", ...headerOptions }),
+          body: JSON.stringify(payload),
+        })
+        checkAbort(signal)
+        const response = this.validateWebhookResponse(rawResponse, WebhookSuccessResponseSchema)
+        const eventId = response.eventId
+        await this.doLocalTransform(flowType, eventType, payload, signal, eventId)
+        await this.doPredicateCheck(eventId, signal, options?.signal !== undefined)
+        checkAbort(signal)
+        return eventId
       })
-      const response = this.validateWebhookResponse(rawResponse, WebhookSuccessResponseSchema)
-      const eventId = response.eventId
-      await this.doLocalTransform(flowType, eventType, payload, eventId)
-      await this.doPredicateCheck(eventId)
-      return eventId
-    }
 
-    const sendBatch = async (payload: EventPayload[], metadata?: EventMetadata, options?: WebhookSendBatchOptions) => {
-      const rawResponse = await this.fetchWithRetry(this.getUrl(flowType, eventType, "events"), {
-        method: "POST",
-        headers: this.getHeaders(metadata, { contentType: "application/json", ...options }),
-        body: JSON.stringify(payload),
+    const sendBatch = async (payload: EventPayload[], metadata?: EventMetadata, options?: WebhookSendBatchOptions) =>
+      withSignal(options?.signal, async (signal) => {
+        checkAbort(signal)
+        const { signal: _signal, ...headerOptions } = options ?? {}
+        const rawResponse = await this.fetchWithRetry(this.getUrl(flowType, eventType, "events"), {
+          method: "POST",
+          signal,
+          headers: this.getHeaders(metadata, { contentType: "application/json", ...headerOptions }),
+          body: JSON.stringify(payload),
+        })
+        checkAbort(signal)
+        const response = this.validateWebhookResponse(rawResponse, WebhookBatchSuccessResponseSchema)
+        const eventIds = response.eventIds
+        if (eventIds.length !== payload.length) {
+          throw new WebhookSendError("Webhook batch returned different number of event ids than payloads", { response })
+        }
+        await drain(
+          payload.map((payload, index) => ({ payload, eventId: eventIds[index] })),
+          signal,
+          ({ payload, eventId }, branchSignal) =>
+            this.doLocalTransform(flowType, eventType, payload, branchSignal, eventId),
+        )
+        await this.doPredicateCheck(eventIds, signal, options?.signal !== undefined)
+        checkAbort(signal)
+        return eventIds
       })
-      const response = this.validateWebhookResponse(rawResponse, WebhookBatchSuccessResponseSchema)
-      const eventIds = response.eventIds
-      if (eventIds.length !== payload.length) {
-        throw new WebhookSendError("Webhook batch returned different number of event ids than payloads", { response })
-      }
-      await Promise.all(
-        payload.map((payload, index) => this.doLocalTransform(flowType, eventType, payload, eventIds[index])),
-      )
-      await this.doPredicateCheck(eventIds)
-      return eventIds
-    }
     return { send, sendBatch }
   }
 
@@ -134,31 +150,41 @@ export class WebhookBuilder {
     flowType: string,
     eventType: string,
   ): WebhookFile<EventMetadata> {
-    const send = async (payload: WebhookFileData, metadata?: EventMetadata, options?: WebhookSendOptions) => {
-      const formData = new FormData()
-      // for (const [key, value] of Object.entries(payload.additionalProperties ?? {})) {
-      //   formData.append(key, value as string)
-      // }
-      process.env.DEBUG?.includes("transformer-core") && console.log("additionalProperties", payload.additionalProperties)
-      formData.append("additionalProperties", JSON.stringify(payload.additionalProperties ?? "{}"))
-      formData.append("fileId", payload.fileId)
-      formData.append("type", payload.fileType)
-      formData.append("file", payload.fileContent, payload.fileName)
-      const rawResponse = await this.fetchWithRetry(this.getUrl(flowType, eventType, "file"), {
-        method: "POST",
-        headers: this.getHeaders(metadata, options),
-        body: formData,
+    const send = async (payload: WebhookFileData, metadata?: EventMetadata, options?: WebhookSendOptions) =>
+      withSignal(options?.signal, async (signal) => {
+        checkAbort(signal)
+        const formData = new FormData()
+        formData.append("additionalProperties", JSON.stringify(payload.additionalProperties ?? "{}"))
+        formData.append("fileId", payload.fileId)
+        formData.append("type", payload.fileType)
+        formData.append("file", payload.fileContent, payload.fileName)
+        checkAbort(signal)
+        const { signal: _signal, ...headerOptions } = options ?? {}
+        const rawResponse = await this.fetchWithRetry(this.getUrl(flowType, eventType, "file"), {
+          method: "POST",
+          signal,
+          headers: this.getHeaders(metadata, headerOptions),
+          body: formData,
+        })
+        checkAbort(signal)
+        const response = this.validateWebhookResponse(rawResponse, WebhookFileSuccessResponseSchema)
+        const eventIds = response.eventIds
+        await this.doPredicateCheck(eventIds, signal, options?.signal !== undefined)
+        checkAbort(signal)
+        return eventIds
       })
-      const response = this.validateWebhookResponse(rawResponse, WebhookFileSuccessResponseSchema)
-      const eventIds = response.eventIds
-      await this.doPredicateCheck(eventIds)
-      return eventIds
-    }
 
     return { send }
   }
 
-  private async doLocalTransform(flowType: string, eventType: string, payload: unknown, eventId?: string) {
+  private async doLocalTransform(
+    flowType: string,
+    eventType: string,
+    payload: unknown,
+    signal: AbortSignal,
+    eventId?: string,
+  ) {
+    checkAbort(signal)
     if (!this.localTransformOptions?.baseUrl) {
       return
     }
@@ -170,20 +196,34 @@ export class WebhookBuilder {
       eventId: eventId ?? "00000000-0000-0000-0000-000000000000",
       validTime: new Date().toISOString(),
     }
+    const body = JSON.stringify(event)
+    checkAbort(signal)
     try {
       const response = await fetch(url, {
         method: "POST",
+        signal,
         headers: {
           "X-Secret": this.localTransformOptions.secret ?? "",
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(event),
+        body,
       })
-      if (!response.ok) {
-        const responseBody = await response.json()
-        throw new WebhookLocalTransformerError("Failed to send event to local transformer", { response: responseBody })
+      try {
+        checkAbort(signal)
+        if (!response.ok) {
+          const responseBody = await response.json()
+          checkAbort(signal)
+          throw new WebhookLocalTransformerError("Failed to send event to local transformer", {
+            response: responseBody,
+          })
+        }
+        // A successful local transform has no response payload contract. Dispose its body.
+      } finally {
+        await response.body?.cancel().catch(() => undefined)
       }
+      checkAbort(signal)
     } catch (error) {
+      checkAbort(signal)
       throw new WebhookLocalTransformerError("Failed to send event to local transformer", { exception: error })
     }
   }
@@ -211,7 +251,12 @@ export class WebhookBuilder {
     return response
   }
 
-  private async doPredicateCheck(eventIds: string | string[]): Promise<void> {
+  private async doPredicateCheck(
+    eventIds: string | string[],
+    signal: AbortSignal,
+    stopOnError: boolean,
+  ): Promise<void> {
+    checkAbort(signal)
     if (!this.predicate || !this.predicateOptions) {
       return
     }
@@ -220,18 +265,19 @@ export class WebhookBuilder {
     let checks: (string | true)[] = Array.isArray(eventIds) ? eventIds : [eventIds]
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
-        checks = await Promise.all<true | string>(
-          checks.map(async (eventId) => {
-            if (eventId === true) {
-              return true
-            }
-            const check = (await predicate(eventId)) ?? false
-            if (check) {
-              return true
-            }
-            return eventId
-          }),
-        )
+        checks = await drain(checks, signal, async (eventId, branchSignal): Promise<true | string> => {
+          if (eventId === true) {
+            return true
+          }
+          checkAbort(branchSignal)
+          const check = (await predicate(eventId, branchSignal)) ?? false
+          checkAbort(branchSignal)
+          if (check) {
+            return true
+          }
+          return eventId
+        })
+        checkAbort(signal)
 
         if (checks.every((check) => check === true)) {
           return
@@ -242,6 +288,8 @@ export class WebhookBuilder {
           })
         }
       } catch (error) {
+        if (stopOnError) throw error
+        checkAbort(signal)
         if (attempt >= maxAttempts) {
           if (error instanceof WebhookPredicateError) {
             throw error
@@ -252,38 +300,42 @@ export class WebhookBuilder {
           })
         }
       }
-      await sleep(attemptDelayMs, attempt)
+      await sleep(attemptDelayMs, attempt, signal)
     }
     throw new WebhookPredicateError("Predicate check failed", {
       eventIds: Array.isArray(eventIds) ? eventIds : [eventIds],
     })
   }
 
-  private async fetchWithRetry(url: string, options: RequestInit) {
+  private async fetchWithRetry(url: string, options: RequestInit & { signal: AbortSignal }) {
+    const { signal } = options
     const { maxAttempts, attemptDelayMs } = this.retryOptions ?? { maxAttempts: 1, attemptDelayMs: 0 }
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      checkAbort(signal)
       try {
         const response = await fetch(url, options)
-        if (response.ok) {
-          return response.json().catch((error) => {
-            return {
-              success: false,
-              message: "Failed to parse response",
-              error: error instanceof Error ? error.message : "Unknown error",
+        try {
+          checkAbort(signal)
+          if (response.ok || !RETRYABLE_STATUS_CODES.includes(response.status) || attempt >= maxAttempts) {
+            try {
+              const body: unknown = await response.json()
+              checkAbort(signal)
+              return body
+            } catch (error) {
+              checkAbort(signal)
+              return {
+                success: false,
+                message: response.ok ? "Failed to parse response" : "Failed to parse error response",
+                error: error instanceof Error ? error.message : "Unknown error",
+              }
             }
-          })
+          }
+        } finally {
+          // Retryable responses need not be read, but their bodies must be released.
+          await response.body?.cancel().catch(() => undefined)
         }
-        if (!RETRYABLE_STATUS_CODES.includes(response.status) || attempt >= maxAttempts) {
-          return response.json().catch((error) => {
-            return {
-              success: false,
-              message: "Failed to parse error response",
-              error: error instanceof Error ? error.message : "Unknown error",
-            }
-          })
-        }
-        await sleep(attemptDelayMs, attempt)
       } catch (error) {
+        checkAbort(signal)
         if (attempt >= maxAttempts) {
           return {
             success: false,
@@ -292,8 +344,9 @@ export class WebhookBuilder {
             __localError: error,
           } as Static<typeof WebhookErrorResponseSchema>
         }
-        await sleep(attemptDelayMs, attempt)
       }
+      checkAbort(signal)
+      await sleep(attemptDelayMs, attempt, signal)
     }
   }
 
@@ -315,8 +368,4 @@ export class WebhookBuilder {
   private getUrl(flowType: string, eventType: string, type: "event" | "events" | "file") {
     return `${this.baseUrl}/${type}/${this.tenant}/${this.dataCore}/${flowType}/${eventType}`
   }
-}
-
-function sleep(ms: number | ((attempt: number) => number), attempt = 1) {
-  return new Promise((resolve) => setTimeout(resolve, typeof ms === "function" ? ms(attempt) : ms))
 }

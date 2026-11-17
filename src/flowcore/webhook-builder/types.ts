@@ -51,16 +51,22 @@ export interface WebhookLocalTransformOptions {
 }
 
 export interface WebhookSendOptions {
+  /** Stops new work; started callbacks drain before rejection and may wait without bound. */
+  signal?: AbortSignal
   eventTime?: Date
   validTime?: Date
 }
 
 export interface WebhookSendBatchOptions {
+  /** Stops new work and drains all started branches. Remote acceptance is not rolled back. */
+  signal?: AbortSignal
   eventTimeKey?: string
   validTimeKey?: string
 }
 
-export interface WebhookHeaderOptions extends WebhookSendOptions, WebhookSendBatchOptions {
+export interface WebhookHeaderOptions
+  extends Omit<WebhookSendOptions, "signal">,
+    Omit<WebhookSendBatchOptions, "signal"> {
   contentType?: string
 }
 
@@ -72,7 +78,7 @@ export interface WebhookFileData {
   additionalProperties?: Record<string, unknown>
 }
 
-export type WebhookPredicate = (eventId: string) => Promise<boolean> | boolean
+export type WebhookPredicate = (eventId: string, signal?: AbortSignal) => Promise<boolean> | boolean
 
 export type Webhook<EventPayload, EventMetadata extends Record<string, unknown> = Record<string, unknown>> = {
   send: (payload: EventPayload, metadata?: EventMetadata, options?: WebhookSendOptions) => Promise<string>

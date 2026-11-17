@@ -18,8 +18,9 @@ module.exports = {
     ],
   ],
   rootDir: ".",
-  setupFiles: ["./test/setup-env-vars.ts"],
+  modulePathIgnorePatterns: ["<rootDir>/dist/"],
   testEnvironment: "node",
+  testTimeout: 5000,
   testRegex: "./test/.*\\.spec\\.ts$",
   transform: {
     "^.+\\.(t|j)s?$": ["@swc/jest", { sourceMaps: "inline" }],
