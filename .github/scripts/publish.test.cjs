@@ -131,6 +131,17 @@ test("registry absence needs both exact 404 and package/version confirmation", (
   ])
     assert.equal(cli({ ...registryBase, ...patch }).status, 1)
 })
+for (const versions of [null, [], "unavailable", true, 123]) {
+  test(`malformed registry versions ${JSON.stringify(versions)} rejects before publication`, () => {
+    const r = cli({
+      ...registryBase,
+      package: { ...registryBase.package, body: { ...registryBase.package.body, versions } },
+    })
+    assert.equal(r.status, 1, r.stdout)
+    assert.match(r.stderr, /REGISTRY_UNKNOWN/)
+    assert.doesNotMatch(r.stdout, /"result":"absent"/)
+  })
+}
 test("matching duplicate/race bytes remain distinct from qualification of prior authority", () => {
   assert.equal(cli({ ...registryBase, versionResponse: matching }).status, 0)
   const code = readFileSync(resolve(__dirname, "release.mjs"), "utf8")

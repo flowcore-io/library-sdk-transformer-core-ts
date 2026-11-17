@@ -183,7 +183,9 @@ function registryGuard(x) {
   check(
     x.package.status === 200 &&
       x.package.body.name === packageName &&
-      x.package.body.versions &&
+      x.package.body.versions !== null &&
+      typeof x.package.body.versions === "object" &&
+      !Array.isArray(x.package.body.versions) &&
       x.package.body["dist-tags"],
     "REGISTRY_UNKNOWN",
   )

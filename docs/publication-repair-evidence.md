@@ -147,3 +147,9 @@ under organization 6395a253-9b2c-400c-9ffa-4fb33561b159/project
 6ee51fbc-0d8a-42a5-b26a-ace780881d25. Initial discovery before scoped start was
 untracked. Other participants and routing remain untouched. Finish only this
 participation before handback. No local timing installation or foreign timer stop.
+
+## Registry metadata review repair
+
+Independent review found malformed `versions` values could be treated as package absence. Added public offline CLI regressions for null, array, string, boolean and number values. Before the fix: 40 passed, 4 failed (null already refused). After requiring a non-null, non-array object: 44 passed, zero failed. Malformed shapes return REGISTRY_UNKNOWN before the publish path; valid empty maps retain the existing confirmed-absence behavior.
+
+Node24.15.0 receipts: `/tmp/vitliki-sdk-registry-shape-red.log` and `/tmp/vitliki-sdk-registry-shape-green.log`. Scoped Biome lint/format and whitespace checks passed. Biome `check` additionally reports pre-existing import ordering in release.mjs; imports were preserved. No publication, registry mutation, credential or workflow change. Actual hosted artifact and target-package authority remain unqualified.
