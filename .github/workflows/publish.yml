@@ -3,45 +3,90 @@ name: Build and Publish NPM Package
 on:
   release:
     types: [published]
-
-env:
-  NODE_VERSION: ">=18.12.1"
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Published stable release tag
+        required: true
+        type: string
 
 permissions:
-  id-token: write
   contents: read
+  id-token: write
+  actions: read
+
+concurrency:
+  group: publish-sdk-transformer-core
+  cancel-in-progress: false
 
 jobs:
   build:
+    if: github.repository == 'flowcore-io/library-sdk-transformer-core-ts' && (github.event_name == 'release' || github.ref == 'refs/heads/main')
     runs-on: blacksmith-4vcpu-ubuntu-2204
-
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout reviewed controller
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744
         with:
-          token: ${{ secrets.FLOWCORE_MACHINE_GITHUB_TOKEN }}
-          submodules: true
-      - name: Extract version from package.json
-        uses: sergeysova/jq-action@v2
-        id: version
+          ref: ${{ github.workflow_sha }}
+          path: controller
+          persist-credentials: false
+      - name: Install supported consumer Node
+        uses: useblacksmith/setup-node@65c6ca86fdeb0ab3d85e78f57e4f6a7e4780b391
         with:
-          cmd: "jq .version package.json -r"
-
-      - name: Show my version
-        run: 'echo "version ${{ steps.version.outputs.value }}"'
-
-      - name: Setup Node.js environment
-        uses: actions/setup-node@v3.5.1
+          node-version: '18.12.1'
+      - name: Remember supported consumer Node
+        run: echo "NODE18_BIN=$(command -v node)" >> "$GITHUB_ENV"
+      - name: Install release Node
+        uses: useblacksmith/setup-node@65c6ca86fdeb0ab3d85e78f57e4f6a7e4780b391
         with:
-          node-version: "${{ env.NODE_VERSION }}"
-          registry-url: "https://registry.npmjs.org"
-      - name: Yarn install
+          node-version: '24.15.0'
+          registry-url: https://registry.npmjs.org
+      - name: Pin release tools
         run: |
-          yarn install --frozen-lockfile
-      - name: Lint
-        run: yarn lint
-      - name: Build
-        run: yarn build
-      - name: Publish
-        run: yarn publish --access public --non-interactive --new-version ${{ steps.version.outputs.value }}
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          set -euo pipefail
+          test "$(node --version)" = v24.15.0
+          npm install --prefix "$RUNNER_TEMP/release-tools" --no-audit --no-fund npm@11.6.2 yarn@1.22.22 bun@1.4.4
+          echo "NPM_CLI=$RUNNER_TEMP/release-tools/node_modules/npm/bin/npm-cli.js" >> "$GITHUB_ENV"
+          echo "YARN_CLI=$RUNNER_TEMP/release-tools/node_modules/yarn/bin/yarn.js" >> "$GITHUB_ENV"
+          echo "BUN_BIN=$RUNNER_TEMP/release-tools/node_modules/bun/bin/bun.exe" >> "$GITHUB_ENV"
+          test "$(node "$RUNNER_TEMP/release-tools/node_modules/npm/bin/npm-cli.js" --version)" = 11.6.2
+          test "$(node "$RUNNER_TEMP/release-tools/node_modules/yarn/bin/yarn.js" --version)" = 1.22.22
+          test "$("$RUNNER_TEMP/release-tools/node_modules/bun/bin/bun.exe" --version)" = 1.4.4
+      - name: Resolve immutable release source
+        id: release
+        run: node controller/.github/scripts/release.mjs resolve
+      - name: Checkout immutable release source
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744
+        with:
+          ref: ${{ steps.release.outputs.source }}
+          path: release-source
+          persist-credentials: false
+      - name: Validate source before package scripts
+        run: node controller/.github/scripts/release.mjs source
+      - name: Frozen install, lint, build once, public types and 29 boundary cases
+        working-directory: release-source
+        run: |
+          set -euo pipefail
+          node "$YARN_CLI" install --frozen-lockfile
+          node "$YARN_CLI" lint
+          node "$YARN_CLI" build
+          node "$YARN_CLI" test:types
+          node "$YARN_CLI" test --runInBand
+      - name: Pack once
+        run: node controller/.github/scripts/release.mjs pack
+      - name: Prove exact installed tarball before publication
+        run: node controller/.github/scripts/release.mjs prove
+      - name: Archive exact qualified tarball and prepublication receipt
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: sdk-release-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/sdk-release/package.tgz
+            ${{ runner.temp }}/sdk-release/receipt.json
+          if-no-files-found: error
+          retention-days: 90
+      - name: Publish verified tarball
+        run: node controller/.github/scripts/release.mjs publish
