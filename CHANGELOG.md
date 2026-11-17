@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.6.0](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v2.5.1...v2.6.0) (2026-11-17)
+
+
+### Features
+
+* support per-call cancellation and drain webhook work ([#70](https://github.com/flowcore-io/library-sdk-transformer-core-ts/issues/70)) ([dabf53f](https://github.com/flowcore-io/library-sdk-transformer-core-ts/commit/dabf53f0e134b4ef0f599436cfab20a4f22df497))
+
 ## [2.5.1](https://github.com/flowcore-io/library-sdk-transformer-core-ts/compare/v2.5.0...v2.5.1) (2025-06-03)
 
 
