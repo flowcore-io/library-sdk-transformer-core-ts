@@ -5,7 +5,7 @@ on:
     branches-ignore: ["main"]
 
 env:
-  NODE_VERSION: ">=18.12.1"
+  NODE_VERSION: "24.15.0"
 
 jobs:
   test:
@@ -13,14 +13,20 @@ jobs:
     runs-on: blacksmith-4vcpu-ubuntu-2204
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744
         with:
-          token: ${{ secrets.FLOWCORE_MACHINE_GITHUB_TOKEN }}
-          submodules: true
+          persist-credentials: false
       - name: Setup Node.js environment
-        uses: actions/setup-node@v3.5.1
+        uses: useblacksmith/setup-node@65c6ca86fdeb0ab3d85e78f57e4f6a7e4780b391
         with:
           node-version: "${{ env.NODE_VERSION }}"
+      - name: Pin package tools
+        run: |
+          npm install --global npm@11.6.2 yarn@1.22.22 --force
+          test "$(npm --version)" = 11.6.2
+          test "$(yarn --version)" = 1.22.22
+      - name: Publication guard regression
+        run: node --test .github/scripts/publish.test.cjs
       - name: Yarn install
         run: |
           yarn install --frozen-lockfile
